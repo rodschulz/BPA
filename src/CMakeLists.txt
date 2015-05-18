@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-project(PBA)
+project(BPA)
 
 find_package(PCL 1.7 REQUIRED)
 
@@ -10,9 +10,9 @@ add_definitions(${PCL_DEFINITIONS})
 
 set(PCL_BUILD_TYPE Release)
 
-file(GLOB PBA_SRC
+file(GLOB BPA_SRC
     "*.h"
     "*.cpp"
 )
-add_executable(PBA ${PBA_SRC})
-target_link_libraries(PBA ${PCL_LIBRARIES})
+add_executable(BPA ${BPA_SRC})
+target_link_libraries(BPA ${PCL_LIBRARIES})

@@ -1,2 +1,2 @@
-# CC72Y_PBA
-Pivoting Ball Algorithm implementation
+# CC72Y_BPA
+Ball Pivoting Algorithm implementation
