@@ -6,7 +6,8 @@
 #include <pcl/filters/filter.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/kdtree/kdtree.h>
-#include <pcl/features/normal_3d.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/features/normal_3d_omp.h>
 #include <ctype.h>
 
 Helper::Helper()
@@ -28,13 +29,26 @@ void Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _s
 	// Search method used for the knn search
 	search::KdTree<PointXYZ>::Ptr kdtree(new search::KdTree<PointXYZ>);
 
-	NormalEstimation<PointXYZ, Normal> normalEstimation;
+	NormalEstimationOMP<PointXYZ, Normal> normalEstimation;
 	normalEstimation.setInputCloud(_cloud);
 	normalEstimation.setRadiusSearch(_searchRadius);
 	normalEstimation.setSearchMethod(kdtree);
 	normalEstimation.compute(*_normals);
 }
 
-void Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals)
+bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals)
 {
+	bool status = false;
+
+	if (io::loadPCDFile<PointXYZ>(_inputFile, *_cloud) != 0)
+		cout << "ERROR: Can't read file from disk (" << _inputFile << ")\n";
+	else
+	{
+		// Remove NANs and calculate normals
+		Helper::removeNANs(_cloud);
+		Helper::getNormals(_cloud, 0.01, _normals);
+		status = true;
+	}
+
+	return status;
 }

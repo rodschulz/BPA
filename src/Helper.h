@@ -16,7 +16,7 @@ class Helper
 public:
 	static void removeNANs(PointCloud<PointXYZ>::Ptr &_cloud);
 	static void getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _searchRadius, PointCloud<Normal>::Ptr &_normals);
-	static void getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals);
+	static bool getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals);
 
 private:
 	Helper();
