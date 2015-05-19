@@ -39,9 +39,9 @@ int main(int _argn, char **_argv)
 
 	while (true)
 	{
-//		Edge edge;
-//		while (getActiveEdge(front, edge))
-//		{
+		Edge edge;
+		while (Helper::getActiveEdge(front, edge))
+		{
 //			PointXYZ *p = ball.pivot(edge);
 //			if (!used(p) && onFront(p))
 //			{
@@ -58,7 +58,7 @@ int main(int _argn, char **_argv)
 //			else
 //				// Mark edge as boundary
 //				edge.setActive(false);
-//		}
+		}
 //
 //		Triangle seed;
 //		if (findSeedTriangle(seed))
