@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include <string>
 #include <pcl/common/common.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/kdtree/kdtree.h>
 #include "Helper.h"
+#include "Ball.h"
 
 using namespace std;
 using namespace pcl;
@@ -35,46 +34,41 @@ int main(int _argn, char **_argv)
 	}
 	cout << "Loaded " << cloud->size() << " points in cloud\n";
 
+	Ball ball = Ball(cloud, ballRadius);
 	vector<Edge> front;
+
 	while (true)
 	{
-		Edge edge;
-		while (getActiveEdge(edge))
-		{
-			PointXYZ *p = pivot(front, edge, ballRadius);
-			if (!used(p) && onFront(p))
-			{
-				// Here triangles must be stored in an output vector
-
-				Triangle t = Triangle(edge, p);
-				join(edge, p, front);
-
-				if (inFront(Edge(edge.getPoint(0), p), front))
-					glue();
-				if (inFront(Edge(edge.getPoint(1), p), front))
-					glue();
-			}
-			else
-				// Mark edge as boundary
-				edge.setActive(false);
-		}
-
-		Triangle seed;
-		if (findSeedTriangle(seed))
-		{
-			// Seed triangle must be stored in an output vector
-			insertEdges(front, seed);
-		}
-		else
+//		Edge edge;
+//		while (getActiveEdge(front, edge))
+//		{
+//			PointXYZ *p = ball.pivot(edge);
+//			if (!used(p) && onFront(p))
+//			{
+//				// Here triangles must be stored in an output vector
+//
+//				Triangle t = Triangle(edge, p);
+//				join(edge, p, front);
+//
+//				if (inFront(Edge(edge.getPoint(0), p), front))
+//					glue();
+//				if (inFront(Edge(edge.getPoint(1), p), front))
+//					glue();
+//			}
+//			else
+//				// Mark edge as boundary
+//				edge.setActive(false);
+//		}
+//
+//		Triangle seed;
+//		if (findSeedTriangle(seed))
+//		{
+//			// Seed triangle must be stored in an output vector
+//			insertEdges(front, seed);
+//		}
+//		else
 			break;
 	}
-
-//	KdTreeFLANN<PointXYZ> kdtree;
-//	kdtree.setInputCloud(cloud);
-//
-//	vector<int> pointIndices;
-//	vector<float> pointRadiusSquaredDistance;
-//	kdtree.radiusSearch(_searchPoint, ballRadius, pointIndices, pointRadiusSquaredDistance);
 
 	cout << "Finished\n";
 	return EXIT_SUCCESS;

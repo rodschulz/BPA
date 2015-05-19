@@ -8,6 +8,7 @@ Edge::Edge(const PointXYZ *_point0, const PointXYZ *_point1)
 {
 	point0 = _point0;
 	point1 = _point1;
+	middle = PointXYZ((point0->x + point1->x) / 2, (point0->y + point1->y) / 2, (point0->z + point1->z) / 2);
 	active = true;
 }
 
@@ -25,7 +26,7 @@ bool Edge::isActive() const
 	return active;
 }
 
-PointXYZ *Edge::getPoint(const int _point)
+const PointXYZ *Edge::getPoint(const int _point)
 {
 	switch (_point)
 	{
@@ -36,4 +37,9 @@ PointXYZ *Edge::getPoint(const int _point)
 		default:
 			return NULL;
 	}
+}
+
+PointXYZ Edge::getMiddlePoint() const
+{
+	return middle;
 }

@@ -16,10 +16,12 @@ public:
 
 	void setActive(const bool _active);
 	bool isActive() const;
-	PointXYZ *getPoint(const int _point);
+	const PointXYZ *getPoint(const int _point);
+	PointXYZ getMiddlePoint() const;
 
 private:
-	PointXYZ *point0;
-	PointXYZ *point1;
+	const PointXYZ *point0;
+	const PointXYZ *point1;
+	PointXYZ middle;
 	bool active;
 };
