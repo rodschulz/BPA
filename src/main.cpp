@@ -7,6 +7,7 @@
 #include <pcl/common/common.h>
 #include "Helper.h"
 #include "Ball.h"
+#include "Triangle.h"
 
 using namespace std;
 using namespace pcl;
@@ -22,11 +23,11 @@ int main(int _argn, char **_argv)
 	}
 
 	string inputFile = _argv[1];
-	double ballRadius = 0.01;
+	double ballRadius = 0.005;
 
 	// Read a PCD file from disk and calculate normals
-	PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>);
-	PointCloud<Normal>::Ptr normals(new PointCloud<Normal>);
+	PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>());
+	PointCloud<Normal>::Ptr normals(new PointCloud<Normal>());
 	if (!Helper::getCloudAndNormals(inputFile, cloud, normals))
 	{
 		cout << "ERROR: loading failed\n";
@@ -34,9 +35,12 @@ int main(int _argn, char **_argv)
 	}
 	cout << "Loaded " << cloud->size() << " points in cloud\n";
 
-	Ball ball = Ball(cloud, ballRadius);
+	DataHolder holder(cloud, normals);
+	Ball ball = Ball(holder, ballRadius);
 	vector<Edge> front;
+	vector<Triangle> outputMesh;
 
+	// Create the mesh
 	while (true)
 	{
 		Edge edge;
@@ -60,13 +64,13 @@ int main(int _argn, char **_argv)
 //				edge.setActive(false);
 		}
 //
-//		Triangle seed;
-//		if (findSeedTriangle(seed))
-//		{
-//			// Seed triangle must be stored in an output vector
+		Triangle seed;
+		if (ball.findSeedTriangle(holder, seed))
+		{
+			outputMesh.push_back(seed);
 //			insertEdges(front, seed);
-//		}
-//		else
+		}
+		else
 			break;
 	}
 
