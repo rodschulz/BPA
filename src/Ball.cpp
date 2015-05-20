@@ -3,6 +3,7 @@
  * 2015
  */
 #include "Ball.h"
+#include "Writer.h"
 
 Ball::Ball(const DataHolder &_holder, const double &_ballRadius)
 {
@@ -75,6 +76,8 @@ bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
 						int index2 = indices[k];
 						if (j != k && index2 != index0 && !used->at(index2))
 						{
+							cout << "Testing seed triangle in vertices " << index0 << " " << index1 << " " << index2 << "\n";
+
 							/**
 							 * The idea here is generate a plane holding the 3 points,
 							 * then find the circumcircle of those in the plane and using
@@ -107,6 +110,8 @@ bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
 							pair<pair<double, double>, double> circle = getCircumcircle2D(v0, v1, v2);
 							double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;
 
+							double rad = getCircumcircleRadius(cloud->at(index0), cloud->at(index1), cloud->at(index2));
+
 							// Check if the sphere will be valid before go farer
 							if (squaredDistance > 0)
 							{
@@ -118,6 +123,9 @@ bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
 								vector<float> dists;
 								PointXYZ center = PointXYZ(ballCenter.x(), ballCenter.y(), ballCenter.z());
 								kdtree.radiusSearch(center, ballRadius, neighborhood, dists);
+
+								Writer::writeSphere("sphere", center, ballRadius);
+								Writer::writeTriangle("triangle", Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2)));
 
 								int tt = 0;
 							}

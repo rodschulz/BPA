@@ -23,7 +23,7 @@ int main(int _argn, char **_argv)
 	}
 
 	string inputFile = _argv[1];
-	double ballRadius = 0.005;
+	double ballRadius = 0.001;
 
 	// Read a PCD file from disk and calculate normals
 	PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>());
