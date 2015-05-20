@@ -10,11 +10,22 @@ Triangle::Triangle()
 	vertex0.second = vertex1.second = vertex2.second = -1;
 }
 
-Triangle::Triangle(const PointXYZ &_p0, const PointXYZ &_p1, const PointXYZ &_p2)
+Triangle::Triangle(const PointXYZ &_P0, const PointXYZ &_P1, const PointXYZ &_P2)
 {
-	vertex0.first = (PointXYZ *)&_p0;
-	vertex1.first = (PointXYZ *)&_p1;
-	vertex2.first = (PointXYZ *)&_p2;
+	vertex0.first = (PointXYZ *) &_P0;
+	vertex1.first = (PointXYZ *) &_P1;
+	vertex2.first = (PointXYZ *) &_P2;
+	vertex0.second = vertex1.second = vertex2.second = -1;
+}
+
+Triangle::Triangle(const PointXYZ &_P0, const PointXYZ &_P1, const PointXYZ &_P2, const int _indexP0, const int _indexP1, const int _indexP2)
+{
+	vertex0.first = (PointXYZ *) &_P0;
+	vertex1.first = (PointXYZ *) &_P1;
+	vertex2.first = (PointXYZ *) &_P2;
+	vertex0.second = _indexP0;
+	vertex1.second = _indexP1;
+	vertex2.second = _indexP2;
 }
 
 Triangle::Triangle(const Triangle &_other)
@@ -52,5 +63,20 @@ PointXYZ *Triangle::getVertex(const int _n) const
 			return vertex2.first;
 		default:
 			return NULL;
+	}
+}
+
+int Triangle::getVertexIndex(const int _n) const
+{
+	switch (_n)
+	{
+		case 0:
+			return vertex0.second;
+		case 1:
+			return vertex1.second;
+		case 2:
+			return vertex2.second;
+		default:
+			return -1;
 	}
 }

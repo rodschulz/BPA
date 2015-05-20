@@ -13,17 +13,27 @@ Writer::~Writer()
 {
 }
 
-void Writer::writeSphere(const string &_filename, const PointXYZ &_center, const double _radius)
+void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle)
 {
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename + SPHERE_EXTENSION;
+	string name = OUTPUT_FOLDER + _filename + POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 	output.precision(15);
 
 	output << fixed;
-	output << "STESPHERE\n";
-	output << _radius << "\n";
-	output << _center.x << " " << _center.y << " " << _center.z << "\n";
+	output << "LIST\n";
+
+	// Generate a line to draw the triangle
+	output << "{ OFF 3 1 3 ";
+	for (size_t i = 0; i < 3; i++)
+	{
+		PointXYZ *p = _triangle.getVertex(i);
+		output << p->x << " " << p->y << " " << p->z << " ";
+	}
+	output << "3 0 1 2 0 }\n";
+
+	// Generate a line to draw the sphere
+	output << "{ STESPHERE " << _radius << " " << _center.x << " " << _center.y << " " << _center.z << " }\n";
 
 	output.close();
 }

@@ -51,7 +51,7 @@ void Ball::pivot(const Edge &_edge)
 	}
 }
 
-bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
+bool Ball::findSeedTriangle(Triangle &_seedTriangle)
 {
 	bool status = false;
 
@@ -78,19 +78,14 @@ bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
 						{
 							cout << "Testing seed triangle in vertices " << index0 << " " << index1 << " " << index2 << "\n";
 
-							/**
-							 * The idea here is generate a plane holding the 3 points,
-							 * then find the circumcircle of those in the plane and using
-							 * that find the center of the sphere on the outer side
-							 */
 							Vector3f p0 = cloud->at(index0).getVector3fMap();
 							Vector3f p1 = cloud->at(index1).getVector3fMap();
 							Vector3f p2 = cloud->at(index2).getVector3fMap();
 
 							// Find a normal to the plane holding the 3 points
-							Vector3f diff1 = p1 - p0;
-							Vector3f diff2 = p2 - p0;
-							Vector3f n = diff1.cross(diff2).normalized();
+							Vector3f d10 = p1 - p0;
+							Vector3f d20 = p2 - p0;
+							Vector3f n = d10.cross(d20).normalized();
 
 							// Check the normal is pointing outwards
 							int count = 0;
@@ -100,34 +95,43 @@ bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
 							if (count >= 2)
 								n *= -1;
 
-							Vector3f x = diff1.normalized();
-							Vector3f y = n.cross(x).normalized();
+							Vector3f d01 = p0 - p1;
+							Vector3f d12 = p1 - p2;
+							Vector3f d21 = p2 - p1;
+							Vector3f d02 = p0 - p2;
 
-							// Solve a circumcircle of the 3 vector in the plane holding them
-							Vector2f v0 = Vector2f(0, 0);
-							Vector2f v1 = Vector2f(diff1.norm(), 0);
-							Vector2f v2 = Vector2f(diff2.dot(x), diff2.dot(y));
-							pair<pair<double, double>, double> circle = getCircumcircle2D(v0, v1, v2);
-							double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;
+							double norm01 = d01.norm();
+							double norm12 = d12.norm();
+							double norm02 = d02.norm();
 
-							double rad = getCircumcircleRadius(cloud->at(index0), cloud->at(index1), cloud->at(index2));
+							double norm01C12 = d01.cross(d12).norm();
+
+							double alpha = (norm12 * norm12 * d01.dot(d02)) / (2 * norm01C12 * norm01C12);
+							double beta = (norm02 * norm02 * d10.dot(d12)) / (2 * norm01C12 * norm01C12);
+							double gamma = (norm01 * norm01 * d20.dot(d21)) / (2 * norm01C12 * norm01C12);
+
+							Vector3f circumscribedCircleCenter = alpha * p0 + beta * p1 + gamma * p2;
+							double circumscribedCircleRadius = (norm01 * norm12 * norm02) / (2 * norm01C12);
 
 							// Check if the sphere will be valid before go farer
+							double squaredDistance = ballRadius * ballRadius - circumscribedCircleRadius * circumscribedCircleRadius;
 							if (squaredDistance > 0)
 							{
 								double distance = sqrt(squaredDistance);
-								Vector3f circleCenter = circle.first.first * x + circle.first.second * y;
-								Vector3f ballCenter = circleCenter + distance * n;
+								Vector3f ballCenter = circumscribedCircleCenter + distance * n;
 
 								vector<int> neighborhood;
 								vector<float> dists;
 								PointXYZ center = PointXYZ(ballCenter.x(), ballCenter.y(), ballCenter.z());
 								kdtree.radiusSearch(center, ballRadius, neighborhood, dists);
 
-								Writer::writeSphere("sphere", center, ballRadius);
-								Writer::writeTriangle("triangle", Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2)));
-
-								int tt = 0;
+								if (neighborhood.empty())
+								{
+									cout << "Seed triangle found\n";
+									_seedTriangle = Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2);
+									Writer::writeCircumscribedSphere("seedTriangle", center, ballRadius, _seedTriangle);
+									return true;
+								}
 							}
 						}
 					}
@@ -137,39 +141,4 @@ bool Ball::findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle)
 	}
 
 	return status;
-}
-
-pair<pair<double, double>, double> Ball::getCircumcircle2D(const Vector2f &_v0, const Vector2f &_v1, const Vector2f &_v2) const
-{
-	pair<pair<double, double>, double> circle = make_pair(make_pair(0.0, 0.0), 0.0);
-
-	double bx = _v0.x();
-	double by = _v0.y();
-	double cx = _v1.x();
-	double cy = _v1.y();
-	double dx = _v2.x();
-	double dy = _v2.y();
-	double temp = cx * cx + cy * cy;
-	double bc = (bx * bx + by * by - temp) / 2.0;
-	double cd = (temp - dx * dx - dy * dy) / 2.0;
-	double det = (bx - cx) * (cy - dy) - (cx - dx) * (by - cy);
-
-	if (fabs(det) < COMPARISON_EPSILON)
-	{
-		circle.first.first = 1.0;
-		circle.first.second = 1.0;
-		circle.second = 0.0;
-	}
-	else
-	{
-		det = 1 / det;
-
-		circle.first.first = (bc * (cy - dy) - cd * (by - cy)) * det;
-		circle.first.second = ((bx - cx) * cd - (cx - dx) * bc) * det;
-		cx = circle.first.first;
-		cy = circle.first.second;
-		circle.second = sqrt((cx - bx) * (cx - bx) + (cy - by) * (cy - by));
-	}
-
-	return circle;
 }

@@ -25,11 +25,9 @@ public:
 	~Ball();
 
 	void pivot(const Edge &_edge);
-	bool findSeedTriangle(DataHolder &_holder, Triangle &_seedTriangle);
+	bool findSeedTriangle(Triangle &_seedTriangle);
 
 private:
-	pair<pair<double, double>, double> getCircumcircle2D(const Vector2f &_v0, const Vector2f &_v1, const Vector2f &_v2) const;
-
 	KdTreeFLANN<PointXYZ> kdtree;
 	PointCloud<PointXYZ>::Ptr cloud;
 	PointCloud<Normal>::Ptr normals;

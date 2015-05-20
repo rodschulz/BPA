@@ -17,7 +17,7 @@ using namespace pcl;
 class Writer
 {
 public:
-	static void writeSphere(const string &_filename, const PointXYZ &_center, const double _radius);
+	static void writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle);
 	static void writePolygon();
 	static void writeTriangle(const string &_filename, const Triangle &_triangle);
 

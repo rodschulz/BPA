@@ -65,7 +65,7 @@ int main(int _argn, char **_argv)
 		}
 //
 		Triangle seed;
-		if (ball.findSeedTriangle(holder, seed))
+		if (ball.findSeedTriangle(seed))
 		{
 			outputMesh.push_back(seed);
 //			insertEdges(front, seed);
