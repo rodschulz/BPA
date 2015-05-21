@@ -33,6 +33,20 @@ private:
 	static bool compareAngles(const pair<double, int> &_p1, const pair<double, int> &_p2);
 
 	pair<Vector3f, double> getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal);
+	inline bool getBallCenter(const pair<Vector3f, double> &_circumscribedCircle, const Vector3f &_normal, Vector3f &_ballCenter) const
+	{
+		bool status = false;
+
+		double squaredDistance = ballRadius * ballRadius - _circumscribedCircle.second * _circumscribedCircle.second;
+		if (squaredDistance >= 0)
+		{
+			double distance = sqrt(squaredDistance);
+			_ballCenter = _circumscribedCircle.first + distance * _normal;
+			status = true;
+		}
+
+		return status;
+	}
 
 	KdTreeFLANN<PointXYZ> kdtree;
 	PointCloud<PointXYZ>::Ptr cloud;

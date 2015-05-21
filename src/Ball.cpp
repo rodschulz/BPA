@@ -22,13 +22,15 @@ Ball::~Ball()
 
 pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
 {
+	PointDat v0 = _edge.getVertex(0);
+	PointDat v1 = _edge.getVertex(1);
+	PointDat opposite = _edge.getOppositeVertex();
 	PointXYZ edgeMiddle = _edge.getMiddlePoint();
 	double pivotingRadius = _edge.getPivotingRadius();
 
 	// Create a plane passing for the middle point and perpendicular to the edge
 	Vector3f middle = edgeMiddle.getVector3fMap();
 	Vector3f ballCenter = _edge.getBallCenter().getVector3fMap();
-	PointDat v0 = _edge.getVertex(0);
 	Vector3f vertex0 = v0.first->getVector3fMap();
 
 	Vector3f diff1 = 100 * (vertex0 - middle);
@@ -43,7 +45,6 @@ pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
 	vector<float> squaredDistances;
 	kdtree.radiusSearch(edgeMiddle, ballRadius * 2, indices, squaredDistances);
 
-	PointDat opposite = _edge.getOppositeVertex();
 	Vector3f zeroAngle = opposite.first->getVector3fMap() - middle;
 	zeroAngle.normalize();
 	zeroAngle = plane.projection(zeroAngle).normalized();
@@ -52,8 +53,18 @@ pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
 	priority_queue<pair<double, int>, vector<pair<double, int> >, compareMethod> pointQueue(compareAngles);
 	for (size_t i = 0; i < indices.size(); i++)
 	{
-		Vector3f point = cloud->at(indices[i]).getVector3fMap();
+		int index = indices[i];
+
+		// Skip the points already used
+		if (used->at(index))
+			continue;
+
+		Vector3f point = cloud->at(index).getVector3fMap();
 		double distanceToPlane = plane.absDistance(point);
+
+		Vector3f nn;
+		pair<Vector3f, double> circle = Ball::getCircumscribedCircle(v0.second, v1.second, index, nn);
+		Vector3f cc = plane.projection(circle.first);
 
 		/**
 		 * If the distance to the plane is less than the ball radius, then intersection between a ball
@@ -114,53 +125,11 @@ bool Ball::findSeedTriangle(Triangle &_seedTriangle)
 						{
 							cout << "Testing seed triangle in vertices " << index0 << " " << index1 << " " << index2 << "\n";
 
-//							Vector3f p0 = cloud->at(index0).getVector3fMap();
-//							Vector3f p1 = cloud->at(index1).getVector3fMap();
-//							Vector3f p2 = cloud->at(index2).getVector3fMap();
-//
-//							// Find a normal to the plane holding the 3 points
-//							Vector3f d10 = p1 - p0;
-//							Vector3f d20 = p2 - p0;
-//							Vector3f n = d10.cross(d20).normalized();
-//
-//							// Check the normal is pointing outwards
-//							int count = 0;
-//							count = normals->at(index0).getNormalVector3fMap().dot(n) < 0 ? count + 1 : count;
-//							count = normals->at(index1).getNormalVector3fMap().dot(n) < 0 ? count + 1 : count;
-//							count = normals->at(index2).getNormalVector3fMap().dot(n) < 0 ? count + 1 : count;
-//							if (count >= 2)
-//								n *= -1;
-//
-//							Vector3f d01 = p0 - p1;
-//							Vector3f d12 = p1 - p2;
-//							Vector3f d21 = p2 - p1;
-//							Vector3f d02 = p0 - p2;
-//
-//							double norm01 = d01.norm();
-//							double norm12 = d12.norm();
-//							double norm02 = d02.norm();
-//
-//							double norm01C12 = d01.cross(d12).norm();
-//
-//							double alpha = (norm12 * norm12 * d01.dot(d02)) / (2 * norm01C12 * norm01C12);
-//							double beta = (norm02 * norm02 * d10.dot(d12)) / (2 * norm01C12 * norm01C12);
-//							double gamma = (norm01 * norm01 * d20.dot(d21)) / (2 * norm01C12 * norm01C12);
-//
-//							Vector3f circumscribedCircleCenter = alpha * p0 + beta * p1 + gamma * p2;
-//							double circumscribedCircleRadius = (norm01 * norm12 * norm02) / (2 * norm01C12);
-
 							Vector3f normal;
 							pair<Vector3f, double> circle = getCircumscribedCircle(index0, index1, index2, normal);
-							Vector3f circumscribedCircleCenter = circle.first;
-							double circumscribedCircleRadius = circle.second;
-
-							// Check if the sphere will be valid before go farer
-							double squaredDistance = ballRadius * ballRadius - circumscribedCircleRadius * circumscribedCircleRadius;
-							if (squaredDistance > 0)
+							Vector3f center;
+							if (getBallCenter(circle, normal, center))
 							{
-								double distance = sqrt(squaredDistance);
-								Vector3f center = circumscribedCircleCenter + distance * normal;
-
 								vector<int> neighborhood;
 								vector<float> dists;
 								PointXYZ ballCenter = PointXYZ(center.x(), center.y(), center.z());

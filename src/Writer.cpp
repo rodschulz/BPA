@@ -21,7 +21,7 @@ void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_
 	output.precision(15);
 
 	output << fixed;
-	output << "LIST\n";
+	output << "appearance { -face +edge }\nLIST\n";
 
 	// Generate a line to draw the triangle
 	output << "{ OFF 3 1 3 ";
