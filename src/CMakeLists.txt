@@ -14,5 +14,6 @@ file(GLOB BPA_SRC
     "*.h"
     "*.cpp"
 )
+
 add_executable(BPA ${BPA_SRC})
 target_link_libraries(BPA ${PCL_LIBRARIES})

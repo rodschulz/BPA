@@ -9,22 +9,21 @@ using namespace Eigen;
 
 Edge::Edge()
 {
-	vertex0 = NULL;
-	vertex1 = NULL;
-	oppositeVertex = NULL;
+	vertices.clear();
+	oppositeVertex = make_pair<PointXYZ *, int>(NULL, -1);
 	ballCenter = middlePoint = PointXYZ(0, 0, 0);
 	pivotingRadius = 0;
 	active = false;
 }
 
-Edge::Edge(const PointXYZ *_v0, const PointXYZ *_v1, const PointXYZ *_oppositeVertex, const PointXYZ &_ballCenter)
+Edge::Edge(const PointDat &_vertex0, const PointDat &_vertex1, const PointDat _oppositeVertex, const PointXYZ &_ballCenter)
 {
-	vertex0 = (PointXYZ *) _v0;
-	vertex1 = (PointXYZ *) _v1;
-	oppositeVertex = (PointXYZ *) _oppositeVertex;
+	vertices.push_back(_vertex0);
+	vertices.push_back(_vertex1);
+	oppositeVertex = _oppositeVertex;
 
 	ballCenter = _ballCenter;
-	middlePoint = PointXYZ((vertex0->x + vertex1->x) * 0.5, (vertex0->y + vertex1->y) * 0.5, (vertex0->z + vertex1->z) * 0.5);
+	middlePoint = PointXYZ((_vertex0.first->x + _vertex1.first->x) * 0.5, (_vertex0.first->y + _vertex1.first->y) * 0.5, (_vertex0.first->z + _vertex1.first->z) * 0.5);
 
 	Vector3f m = middlePoint.getVector3fMap();
 	Vector3f c = ballCenter.getVector3fMap();
@@ -35,8 +34,7 @@ Edge::Edge(const PointXYZ *_v0, const PointXYZ *_v1, const PointXYZ *_oppositeVe
 
 Edge::Edge(const Edge &_other)
 {
-	vertex0 = _other.vertex0;
-	vertex1 = _other.vertex1;
+	vertices = _other.vertices;
 	oppositeVertex = _other.oppositeVertex;
 
 	ballCenter = _other.ballCenter;
@@ -50,8 +48,7 @@ Edge &Edge::operator=(const Edge &_other)
 {
 	if (this != &_other)
 	{
-		vertex0 = _other.vertex0;
-		vertex1 = _other.vertex1;
+		vertices = _other.vertices;
 		oppositeVertex = _other.oppositeVertex;
 
 		ballCenter = _other.ballCenter;
@@ -78,17 +75,17 @@ bool Edge::isActive() const
 	return active;
 }
 
-PointXYZ *Edge::getVertex(const int _point) const
+PointDat Edge::getVertex(const int _n) const
 {
-	switch (_point)
-	{
-		case 0:
-			return vertex0;
-		case 1:
-			return vertex1;
-		default:
-			return NULL;
-	}
+	if (_n < 2)
+		return vertices[_n];
+	else
+		return make_pair<PointXYZ *, int>(NULL, -1);
+}
+
+PointDat Edge::getOppositeVertex() const
+{
+	return oppositeVertex;
 }
 
 PointXYZ Edge::getMiddlePoint() const
@@ -96,7 +93,7 @@ PointXYZ Edge::getMiddlePoint() const
 	return middlePoint;
 }
 
-PointXYZ Edge::getCircleCenter() const
+PointXYZ Edge::getBallCenter() const
 {
 	return ballCenter;
 }

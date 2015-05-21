@@ -11,12 +11,12 @@ Triangle::Triangle()
 	ballRadius = 0;
 }
 
-Triangle::Triangle(const PointXYZ &_P0, const PointXYZ &_P1, const PointXYZ &_P2, const int _index0, const int _index1, const int _index2, const PointXYZ &_ballCenter, const double _ballRadius)
+Triangle::Triangle(const PointXYZ &_vertex0, const PointXYZ &_vertex1, const PointXYZ &_vertex2, const int _index0, const int _index1, const int _index2, const PointXYZ &_ballCenter, const double _ballRadius)
 {
 	vertices.resize(3);
-	vertices[0] = make_pair((PointXYZ *) &_P0, _index0);
-	vertices[1] = make_pair((PointXYZ *) &_P1, _index1);
-	vertices[2] = make_pair((PointXYZ *) &_P2, _index2);
+	vertices[0] = make_pair((PointXYZ *) &_vertex0, _index0);
+	vertices[1] = make_pair((PointXYZ *) &_vertex1, _index1);
+	vertices[2] = make_pair((PointXYZ *) &_vertex2, _index2);
 	ballCenter = _ballCenter;
 	ballRadius = _ballRadius;
 }
@@ -44,22 +44,20 @@ Triangle &Triangle::operator=(const Triangle &_other)
 	return *this;
 }
 
-PointXYZ *Triangle::getVertex(const int _n) const
+PointDat Triangle::getVertex(const int _n) const
 {
-	PointXYZ *p = NULL;
 	if (_n < 3)
-		p = vertices[_n].first;
-
-	return p;
+		return vertices[_n];
+	else
+		return make_pair<PointXYZ *, int>(NULL, -1);
 }
 
 int Triangle::getVertexIndex(const int _n) const
 {
-	int index = -1;
 	if (_n < 3)
-		index = vertices[_n].second;
-
-	return index;
+		return vertices[_n].second;
+	else
+		return -1;
 }
 
 Edge Triangle::getEdge(const int _n) const
@@ -67,6 +65,5 @@ Edge Triangle::getEdge(const int _n) const
 	int index0 = _n % 3;
 	int index1 = (_n + 1) % 3;
 	int index2 = (_n + 2) % 3;
-
-	return Edge(vertices[index0].first, vertices[index1].first, vertices[index2].first, ballCenter);
+	return Edge(vertices[index0], vertices[index1], vertices[index2], ballCenter);
 }

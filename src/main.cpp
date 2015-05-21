@@ -43,9 +43,10 @@ int main(int _argn, char **_argv)
 	// Create the mesh
 	while (true)
 	{
-		Edge *edge;
-		while (Helper::getActiveEdge(front, edge))
+		int edgeIndex;
+		while ((edgeIndex = Helper::getActiveEdge(front)) != -1)
 		{
+			Edge *edge = &front[edgeIndex];
 			pair<PointXYZ *, int> p = ball.pivot(*edge);
 //			if (!used(p) && onFront(p))
 //			{

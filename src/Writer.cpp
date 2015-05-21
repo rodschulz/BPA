@@ -27,7 +27,7 @@ void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_
 	output << "{ OFF 3 1 3 ";
 	for (size_t i = 0; i < 3; i++)
 	{
-		PointXYZ *p = _triangle.getVertex(i);
+		PointXYZ *p = _triangle.getVertex(i).first;
 		output << p->x << " " << p->y << " " << p->z << " ";
 	}
 	output << "3 0 1 2 0 }\n";
@@ -55,7 +55,7 @@ void Writer::writeTriangle(const string &_filename, const Triangle &_triangle)
 
 	for (size_t i = 0; i < 3; i++)
 	{
-		PointXYZ *p = _triangle.getVertex(i);
+		PointXYZ *p = _triangle.getVertex(i).first;
 		output << p->x << " " << p->y << " " << p->z << "\n";
 	}
 	output << 3 << " " << 0 << " " << 1 << " " << 2 << " " << 0 << "\n";

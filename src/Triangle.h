@@ -15,17 +15,17 @@ class Triangle
 {
 public:
 	Triangle();
-	Triangle(const PointXYZ &_P0, const PointXYZ &_P1, const PointXYZ &_P2, const int _indexP0, const int _indexP1, const int _indexP2, const PointXYZ &_ballCenter, const double _ballRadius);
+	Triangle(const PointXYZ &_vertex0, const PointXYZ &_vertex1, const PointXYZ &_vertex2, const int _index0, const int _index1, const int _index2, const PointXYZ &_ballCenter, const double _ballRadius);
 	Triangle(const Triangle &_other);
 	~Triangle();
 
 	Triangle &operator=(const Triangle &_other);
-	PointXYZ *getVertex(const int _n) const;
+	PointDat getVertex(const int _n) const;
 	int getVertexIndex(const int _n) const;
 	Edge getEdge(const int _n) const;
 
 private:
-	vector<pair<PointXYZ *, int> > vertices;
+	vector<PointDat> vertices;
 	PointXYZ ballCenter;
 	double ballRadius;
 };

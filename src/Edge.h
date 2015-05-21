@@ -5,14 +5,19 @@
 #pragma once
 
 #include <pcl/common/common.h>
+#include <boost/shared_ptr.hpp>
+#include <vector>
 
 using namespace pcl;
+using namespace std;
+
+typedef pair<PointXYZ *, int> PointDat;
 
 class Edge
 {
 public:
 	Edge();
-	Edge(const PointXYZ *_point1, const PointXYZ *_point2, const PointXYZ *_oppositeVertex, const PointXYZ &_circleCenter);
+	Edge(const PointDat &_vertex1, const PointDat &_vertex2, const PointDat _oppositeVertex, const PointXYZ &_ballCenter);
 	Edge(const Edge &_other);
 	~Edge();
 
@@ -20,21 +25,19 @@ public:
 
 	void setActive(const bool _active);
 	bool isActive() const;
-	PointXYZ *getVertex(const int _point) const;
+	PointDat getVertex(const int _point) const;
+	PointDat getOppositeVertex() const;
 	PointXYZ getMiddlePoint() const;
-	PointXYZ getCircleCenter() const;
+	PointXYZ getBallCenter() const;
 	double getPivotingRadius() const;
 
 private:
-	// Triangle's vertices
-	PointXYZ *vertex0;
-	PointXYZ *vertex1;
-	PointXYZ *oppositeVertex;
-
-	// Circle's center and radius of the pivoting locus of the center
+	vector<PointDat> vertices;
+	PointDat oppositeVertex;
 	PointXYZ ballCenter;
-	double pivotingRadius;
-
 	PointXYZ middlePoint;
+	double pivotingRadius;
 	bool active;
 };
+
+typedef boost::shared_ptr<Edge> EdgePtr;
