@@ -24,7 +24,7 @@ public:
 	Ball(const DataHolder &_holder, const double &_ballRadius);
 	~Ball();
 
-	void pivot(const Edge &_edge);
+	pair<PointXYZ *, int> pivot(const Edge &_edge);
 	bool findSeedTriangle(Triangle &_seedTriangle);
 
 private:

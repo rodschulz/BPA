@@ -43,10 +43,10 @@ int main(int _argn, char **_argv)
 	// Create the mesh
 	while (true)
 	{
-		Edge edge;
+		Edge *edge;
 		while (Helper::getActiveEdge(front, edge))
 		{
-//			PointXYZ *p = ball.pivot(edge);
+			pair<PointXYZ *, int> p = ball.pivot(*edge);
 //			if (!used(p) && onFront(p))
 //			{
 //				// Here triangles must be stored in an output vector
@@ -60,15 +60,17 @@ int main(int _argn, char **_argv)
 //					glue();
 //			}
 //			else
-//				// Mark edge as boundary
-//				edge.setActive(false);
+			// Mark edge as boundary
+			edge->setActive(false);
 		}
-//
+
 		Triangle seed;
 		if (ball.findSeedTriangle(seed))
 		{
 			outputMesh.push_back(seed);
-//			insertEdges(front, seed);
+			front.push_back(seed.getEdge(0));
+			front.push_back(seed.getEdge(1));
+			front.push_back(seed.getEdge(2));
 		}
 		else
 			break;

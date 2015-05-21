@@ -19,17 +19,16 @@ Ball::~Ball()
 {
 }
 
-void Ball::pivot(const Edge &_edge)
+pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
 {
 	PointXYZ middle = _edge.getMiddlePoint();
 	double pivotingRadius = _edge.getPivotingRadius();
 
 	// Create a plane passing for the middle point and perpendicular to the edge
 	Vector3f m = middle.getVector3fMap();
-	Vector3f edgePoint0 = _edge.getVertex(0)->getVector3fMap();
-	Vector3f planeNormal = edgePoint0 - m;
-	planeNormal.normalize();
-	Hyperplane<float, 3> plane = Hyperplane<float, 3>(planeNormal, m);
+	Vector3f normal = _edge.getVertex(0)->getVector3fMap() - m;
+	normal.normalize();
+	Hyperplane<float, 3> plane = Hyperplane<float, 3>(normal, m);
 
 	// Get neighborhood
 	vector<int> indices;
@@ -49,6 +48,8 @@ void Ball::pivot(const Edge &_edge)
 			double intersectionCircleRadius = sqrt(ballRadius * ballRadius - distance * distance);
 		}
 	}
+
+	return make_pair<PointXYZ *, int>(NULL, -1);
 }
 
 bool Ball::findSeedTriangle(Triangle &_seedTriangle)
@@ -118,18 +119,23 @@ bool Ball::findSeedTriangle(Triangle &_seedTriangle)
 							if (squaredDistance > 0)
 							{
 								double distance = sqrt(squaredDistance);
-								Vector3f ballCenter = circumscribedCircleCenter + distance * n;
+								Vector3f center = circumscribedCircleCenter + distance * n;
 
 								vector<int> neighborhood;
 								vector<float> dists;
-								PointXYZ center = PointXYZ(ballCenter.x(), ballCenter.y(), ballCenter.z());
-								kdtree.radiusSearch(center, ballRadius, neighborhood, dists);
+								PointXYZ ballCenter = PointXYZ(center.x(), center.y(), center.z());
+								kdtree.radiusSearch(ballCenter, ballRadius, neighborhood, dists);
 
 								if (neighborhood.empty())
 								{
 									cout << "Seed triangle found\n";
-									_seedTriangle = Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2);
-									Writer::writeCircumscribedSphere("seedTriangle", center, ballRadius, _seedTriangle);
+
+									_seedTriangle = Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2, ballCenter, ballRadius);
+									used->at(index0) = true;
+									used->at(index1) = true;
+									used->at(index2) = true;
+
+									Writer::writeCircumscribedSphere("seedTriangle", ballCenter, ballRadius, _seedTriangle);
 									return true;
 								}
 							}

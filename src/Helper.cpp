@@ -53,7 +53,7 @@ bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::
 	return status;
 }
 
-bool Helper::getActiveEdge(vector<Edge> &_front, Edge &_edge)
+bool Helper::getActiveEdge(vector<Edge> &_front, Edge *_edge)
 {
 	bool status = false;
 
@@ -61,7 +61,7 @@ bool Helper::getActiveEdge(vector<Edge> &_front, Edge &_edge)
 	{
 		if (_front[i].isActive())
 		{
-			_edge = _front[i];
+			_edge = &_front[i];
 			status = true;
 			break;
 		}

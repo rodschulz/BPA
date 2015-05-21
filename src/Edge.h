@@ -32,9 +32,9 @@ private:
 	PointXYZ *oppositeVertex;
 
 	// Circle's center and radius of the pivoting locus of the center
-	PointXYZ circleCenter;
+	PointXYZ ballCenter;
 	double pivotingRadius;
 
-	PointXYZ edgeMiddle;
+	PointXYZ middlePoint;
 	bool active;
 };
