@@ -8,6 +8,7 @@
 #include "Helper.h"
 #include "Ball.h"
 #include "Triangle.h"
+#include "Front.h"
 
 using namespace std;
 using namespace pcl;
@@ -37,41 +38,39 @@ int main(int _argn, char **_argv)
 
 	DataHolder holder(cloud, normals);
 	Ball ball = Ball(holder, ballRadius);
-	vector<Edge> front;
+	Front front;
 	vector<Triangle> outputMesh;
 
 	// Create the mesh
 	while (true)
 	{
-		int edgeIndex;
-		while ((edgeIndex = Helper::getActiveEdge(front)) != -1)
+		Edge *edge;
+		while (front.getActiveEdge(&edge))
 		{
-			Edge *edge = &front[edgeIndex];
-			pair<PointXYZ *, int> p = ball.pivot(*edge);
-//			if (!used(p) && onFront(p))
-//			{
-//				// Here triangles must be stored in an output vector
-//
-//				Triangle t = Triangle(edge, p);
+			pair<int, Triangle> p = ball.pivot(edge);
+			if (p.first != -1 && (!holder.used[p.first] || front.isPointInFront(p.first)))
+			{
+				holder.used[p.first] = true;
+				outputMesh.push_back(p.second);
+
+
+				// TODO join and glue operations must set edges as active/disabled
 //				join(edge, p, front);
-//
 //				if (inFront(Edge(edge.getPoint(0), p), front))
 //					glue();
 //				if (inFront(Edge(edge.getPoint(1), p), front))
 //					glue();
-//			}
-//			else
-			// Mark edge as boundary
-			edge->setActive(false);
+			}
+			else
+				// Mark edge as boundary
+				edge->setActive(false);
 		}
 
 		Triangle seed;
 		if (ball.findSeedTriangle(seed))
 		{
 			outputMesh.push_back(seed);
-			front.push_back(seed.getEdge(0));
-			front.push_back(seed.getEdge(1));
-			front.push_back(seed.getEdge(2));
+			front.addEdges(seed);
 		}
 		else
 			break;

@@ -19,20 +19,27 @@ using namespace Eigen;
 
 #define COMPARISON_EPSILON (1E-12)
 
+struct PivotedPoint
+{
+	int pointIndex;
+	PointXYZ * point;
+	Triangle triangle;
+};
+
 class Ball
 {
 public:
 	Ball(const DataHolder &_holder, const double &_ballRadius);
 	~Ball();
 
-	pair<PointXYZ *, int> pivot(const Edge &_edge);
+	pair<int, Triangle> pivot(const Edge *_edge);
 	bool findSeedTriangle(Triangle &_seedTriangle);
 
 private:
-	typedef bool (*compareMethod)(const pair<double, int> &, const pair<double, int> &);
-	static bool compareAngles(const pair<double, int> &_p1, const pair<double, int> &_p2);
+	typedef bool (*compareMethod)(const pair<double, pair<int, Triangle> > &, const pair<double, pair<int, Triangle> > &);
+	static bool compareAngles(const pair<double, pair<int, Triangle> > &_p1, const pair<double, pair<int, Triangle> > &_p2);
 
-	pair<Vector3f, double> getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal);
+	pair<Vector3f, double> getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal) const;
 	inline bool getBallCenter(const pair<Vector3f, double> &_circumscribedCircle, const Vector3f &_normal, Vector3f &_ballCenter) const
 	{
 		bool status = false;

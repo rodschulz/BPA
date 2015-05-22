@@ -44,6 +44,10 @@ Edge::Edge(const Edge &_other)
 	active = _other.active;
 }
 
+Edge::~Edge()
+{
+}
+
 Edge &Edge::operator=(const Edge &_other)
 {
 	if (this != &_other)
@@ -61,8 +65,9 @@ Edge &Edge::operator=(const Edge &_other)
 	return *this;
 }
 
-Edge::~Edge()
+bool Edge::operator<(const Edge &_other) const
 {
+	return pivotingRadius < _other.pivotingRadius;
 }
 
 void Edge::setActive(const bool _active)

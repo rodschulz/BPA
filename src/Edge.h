@@ -22,6 +22,7 @@ public:
 	~Edge();
 
 	Edge &operator=(const Edge &_other);
+	bool operator<(const Edge &_other) const;
 
 	void setActive(const bool _active);
 	bool isActive() const;

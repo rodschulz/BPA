@@ -20,17 +20,17 @@ Ball::~Ball()
 {
 }
 
-pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
+pair<int, Triangle> Ball::pivot(const Edge *_edge)
 {
-	PointDat v0 = _edge.getVertex(0);
-	PointDat v1 = _edge.getVertex(1);
-	PointDat opposite = _edge.getOppositeVertex();
-	PointXYZ edgeMiddle = _edge.getMiddlePoint();
-	double pivotingRadius = _edge.getPivotingRadius();
+	PointDat v0 = _edge->getVertex(0);
+	PointDat v1 = _edge->getVertex(1);
+	Vector3f opposite = _edge->getOppositeVertex().first->getVector3fMap();
+	PointXYZ edgeMiddle = _edge->getMiddlePoint();
+	double pivotingRadius = _edge->getPivotingRadius();
 
 	// Create a plane passing for the middle point and perpendicular to the edge
 	Vector3f middle = edgeMiddle.getVector3fMap();
-	Vector3f ballCenter = _edge.getBallCenter().getVector3fMap();
+	Vector3f ballCenter = _edge->getBallCenter().getVector3fMap();
 	Vector3f vertex0 = v0.first->getVector3fMap();
 
 	Vector3f diff1 = 100 * (vertex0 - middle);
@@ -45,26 +45,20 @@ pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
 	vector<float> squaredDistances;
 	kdtree.radiusSearch(edgeMiddle, ballRadius * 2, indices, squaredDistances);
 
-	Vector3f zeroAngle = opposite.first->getVector3fMap() - middle;
-	zeroAngle.normalize();
+	Vector3f zeroAngle = (opposite - middle).normalized();
 	zeroAngle = plane.projection(zeroAngle).normalized();
 
 	// Iterate over the neighborhood pivoting the ball
-	priority_queue<pair<double, int>, vector<pair<double, int> >, compareMethod> pointQueue(compareAngles);
+	pair<double, pair<int, Triangle> > output = make_pair<double, pair<int, Triangle> >(0, make_pair(-1, Triangle()));
 	for (size_t i = 0; i < indices.size(); i++)
 	{
-		int index = indices[i];
-
 		// Skip the points already used
+		int index = indices[i];
 		if (used->at(index))
 			continue;
 
 		Vector3f point = cloud->at(index).getVector3fMap();
 		double distanceToPlane = plane.absDistance(point);
-
-		Vector3f nn;
-		pair<Vector3f, double> circle = Ball::getCircumscribedCircle(v0.second, v1.second, index, nn);
-		Vector3f cc = plane.projection(circle.first);
 
 		/**
 		 * If the distance to the plane is less than the ball radius, then intersection between a ball
@@ -72,30 +66,32 @@ pair<PointXYZ *, int> Ball::pivot(const Edge &_edge)
 		 */
 		if (distanceToPlane <= ballRadius)
 		{
-			Vector3f projectedPoint = plane.projection(point);
-			double inPlaneDistance = (projectedPoint - middle).norm();
-			double intersectionRadius = sqrt(ballRadius * ballRadius - distanceToPlane * distanceToPlane);
+			Vector3f circleNormal;
+			pair<Vector3f, double> circle = getCircumscribedCircle(v0.second, v1.second, index, circleNormal);
+			Vector3f pointBallCenter;
+			if (getBallCenter(circle, circleNormal, pointBallCenter))
+			{
+				Vector3f projectedCenter = plane.projection(pointBallCenter);
+				double cosAngle = zeroAngle.dot(projectedCenter.normalized());
+				if (fabs(cosAngle) > 1)
+					cosAngle = sign<double>(cosAngle);
+				double angle = acos(cosAngle);
 
-			double a = (intersectionRadius * intersectionRadius - pivotingRadius * pivotingRadius + inPlaneDistance * inPlaneDistance) / (2 * inPlaneDistance);
-			double h = sqrt(intersectionRadius * intersectionRadius - a * a);
+				// TODO fix point selection according to the angle
+				if (output.second.first == -1 || output.first > angle)
+				{
+					PointXYZ center(pointBallCenter.x(), pointBallCenter.y(), pointBallCenter.z());
+					Triangle triangle = Triangle(*v0.first, *v1.first, cloud->at(index), v0.second, v1.second, index, center, ballRadius);
+					output.first = angle;
+					output.second = make_pair(index, triangle);
+				}
 
-			// Find the point in the middle between the intersection points
-			Vector3f p = projectedPoint + (a / inPlaneDistance) * (middle - projectedPoint);
-
-			// Find a vector pointing to the intersection point
-			Vector3f v1 = (p - middle).normalized();
-			Vector3f v2 = v1.cross(normal).normalized();
-
-			// TODO check if the side is right as is or if it must be selected previously using normals
-			Vector3f intersection1 = p + h * v2;
-			Vector3f intersection2 = p - h * v2;
-
-			Vector3f xx = plane.projection(intersection1);
-			bool ss = intersection1 == xx;
+			}
 		}
 	}
 
-	return make_pair<PointXYZ *, int>(NULL, -1);
+	// Extract result
+	return output.second;
 }
 
 bool Ball::findSeedTriangle(Triangle &_seedTriangle)
@@ -158,7 +154,7 @@ bool Ball::findSeedTriangle(Triangle &_seedTriangle)
 	return status;
 }
 
-pair<Vector3f, double> Ball::getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal)
+pair<Vector3f, double> Ball::getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal) const
 {
 	Vector3f p0 = cloud->at(_index0).getVector3fMap();
 	Vector3f p1 = cloud->at(_index1).getVector3fMap();
@@ -198,7 +194,7 @@ pair<Vector3f, double> Ball::getCircumscribedCircle(const int _index0, const int
 	return make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
 }
 
-bool Ball::compareAngles(const pair<double, int> &_p1, const pair<double, int> &_p2)
+bool Ball::compareAngles(const pair<double, pair<int, Triangle> > &_p1, const pair<double, pair<int, Triangle> > &_p2)
 {
 	return _p1.first < _p2.first;
 }
