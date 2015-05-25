@@ -23,6 +23,8 @@ public:
 
 	Edge &operator=(const Edge &_other);
 	bool operator<(const Edge &_other) const;
+	bool operator==(const Edge &_other) const;
+	bool operator!=(const Edge &_other) const;
 
 	void setActive(const bool _active);
 	bool isActive() const;
@@ -39,6 +41,9 @@ private:
 	PointXYZ middlePoint;
 	double pivotingRadius;
 	bool active;
+	long id;
+
+	void setId();
 };
 
 typedef boost::shared_ptr<Edge> EdgePtr;

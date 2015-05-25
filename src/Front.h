@@ -19,14 +19,15 @@ public:
 	~Front();
 
 	void addEdges(const Triangle &_triangle);
+	void join(Edge *_edge, const PointXYZ *_point, const pair<int, Triangle> &_pivotData);
 
-	bool isPointInFront(const int _pointIndex) const;
-	bool getActiveEdge(Edge **_edge) const;
+	bool inFront(const int _pointIndex) const;
+	bool InMesh(const int _pointIndex) const;
+	bool getActiveEdge(Edge **_edge);
 
 private:
-	map<int, bool> pointMap;
+	map<int, bool> frontPointMap;
+	map<int, bool> meshPointMap;
 	map<Edge, bool> edgeMap;
-
-	vector<Edge> edges;
-	vector<Edge> activeEdges;
+	map<Edge, bool> activeEdgeMap;
 };

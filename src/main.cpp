@@ -9,6 +9,7 @@
 #include "Ball.h"
 #include "Triangle.h"
 #include "Front.h"
+#include "Writer.h"
 
 using namespace std;
 using namespace pcl;
@@ -24,7 +25,8 @@ int main(int _argn, char **_argv)
 	}
 
 	string inputFile = _argv[1];
-	double ballRadius = 0.001;
+	//double ballRadius = 0.001;
+	double ballRadius = 0.01;
 
 	// Read a PCD file from disk and calculate normals
 	PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>());
@@ -47,14 +49,14 @@ int main(int _argn, char **_argv)
 		Edge *edge;
 		while (front.getActiveEdge(&edge))
 		{
-			pair<int, Triangle> p = ball.pivot(edge);
-			if (p.first != -1 && (!holder.used[p.first] || front.isPointInFront(p.first)))
+			pair<int, Triangle> pivotData = ball.pivot(edge);
+			if (pivotData.first != -1 && (!holder.used[pivotData.first] || front.inFront(pivotData.first)))
 			{
-				holder.used[p.first] = true;
-				outputMesh.push_back(p.second);
-
+				holder.used[pivotData.first] = true;
+				outputMesh.push_back(pivotData.second);
 
 				// TODO join and glue operations must set edges as active/disabled
+				front.join(edge, &cloud->at(pivotData.first), pivotData);
 //				join(edge, p, front);
 //				if (inFront(Edge(edge.getPoint(0), p), front))
 //					glue();
@@ -62,8 +64,10 @@ int main(int _argn, char **_argv)
 //					glue();
 			}
 			else
+			{
 				// Mark edge as boundary
 				edge->setActive(false);
+			}
 		}
 
 		Triangle seed;
@@ -75,6 +79,9 @@ int main(int _argn, char **_argv)
 		else
 			break;
 	}
+
+	cout << "Writing output mesh\n";
+	Writer::writeMesh("mesh", outputMesh);
 
 	cout << "Finished\n";
 	return EXIT_SUCCESS;

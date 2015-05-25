@@ -14,6 +14,7 @@ Edge::Edge()
 	ballCenter = middlePoint = PointXYZ(0, 0, 0);
 	pivotingRadius = 0;
 	active = false;
+	setId();
 }
 
 Edge::Edge(const PointDat &_vertex0, const PointDat &_vertex1, const PointDat _oppositeVertex, const PointXYZ &_ballCenter)
@@ -30,6 +31,7 @@ Edge::Edge(const PointDat &_vertex0, const PointDat &_vertex1, const PointDat _o
 	pivotingRadius = (m - c).norm();
 
 	active = true;
+	setId();
 }
 
 Edge::Edge(const Edge &_other)
@@ -42,6 +44,7 @@ Edge::Edge(const Edge &_other)
 
 	middlePoint = _other.middlePoint;
 	active = _other.active;
+	id = _other.id;
 }
 
 Edge::~Edge()
@@ -60,6 +63,7 @@ Edge &Edge::operator=(const Edge &_other)
 
 		middlePoint = _other.middlePoint;
 		active = _other.active;
+		id = _other.id;
 	}
 
 	return *this;
@@ -68,6 +72,19 @@ Edge &Edge::operator=(const Edge &_other)
 bool Edge::operator<(const Edge &_other) const
 {
 	return pivotingRadius < _other.pivotingRadius;
+}
+
+bool Edge::operator==(const Edge &_other) const
+{
+	bool equals = (vertices[0] == _other.vertices[0] || vertices[0] == _other.vertices[1])
+			&& (vertices[1] == _other.vertices[0] || vertices[1] == _other.vertices[1]);
+
+	return equals;
+}
+
+bool Edge::operator!=(const Edge &_other) const
+{
+	return !this->operator==(_other);
 }
 
 void Edge::setActive(const bool _active)
@@ -106,4 +123,10 @@ PointXYZ Edge::getBallCenter() const
 double Edge::getPivotingRadius() const
 {
 	return pivotingRadius;
+}
+
+void Edge::setId()
+{
+	static long currentId = 0;
+	id = currentId++;
 }

@@ -8,7 +8,6 @@
 #include "Triangle.h"
 
 using namespace std;
-using namespace pcl;
 
 #define OUTPUT_FOLDER		"./output/"
 #define SPHERE_EXTENSION	".sph"
@@ -18,7 +17,7 @@ class Writer
 {
 public:
 	static void writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle);
-	static void writePolygon();
+	static void writeMesh(const string &_filename, const vector<Triangle> &_meshData);
 	static void writeTriangle(const string &_filename, const Triangle &_triangle);
 
 private:
