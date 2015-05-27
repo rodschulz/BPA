@@ -36,7 +36,7 @@ void Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _s
 	normalEstimation.compute(*_normals);
 }
 
-bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals)
+bool Helper::getCloudAndNormals(const string &_inputFile, const double _estimationRadius, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals)
 {
 	bool status = false;
 
@@ -46,7 +46,7 @@ bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointXYZ>::
 	{
 		// Remove NANs and calculate normals
 		Helper::removeNANs(_cloud);
-		Helper::getNormals(_cloud, 0.01, _normals);
+		Helper::getNormals(_cloud, _estimationRadius, _normals);
 		status = true;
 	}
 

@@ -45,9 +45,9 @@ private:
 		bool status = false;
 
 		double squaredDistance = ballRadius * ballRadius - _circumscribedCircle.second * _circumscribedCircle.second;
-		if (squaredDistance >= 0)
+		if (squaredDistance > 0 || fabs(squaredDistance) <= 1E-7)
 		{
-			double distance = sqrt(squaredDistance);
+			double distance = sqrt(fabs(squaredDistance));
 			_ballCenter = _circumscribedCircle.first + distance * _normal;
 			status = true;
 		}

@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string>
 #include <pcl/common/common.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/io.h>
 #include "Helper.h"
 #include "Ball.h"
 #include "Triangle.h"
@@ -25,23 +27,32 @@ int main(int _argn, char **_argv)
 	}
 
 	string inputFile = _argv[1];
-	//double ballRadius = 0.001;
-	double ballRadius = 0.01;
+	double ballRadius = 0.001;
+
+	cout << "Loading file " << inputFile << "\n";
 
 	// Read a PCD file from disk and calculate normals
 	PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>());
 	PointCloud<Normal>::Ptr normals(new PointCloud<Normal>());
-	if (!Helper::getCloudAndNormals(inputFile, cloud, normals))
+	if (!Helper::getCloudAndNormals(inputFile, 0.005, cloud, normals))
 	{
 		cout << "ERROR: loading failed\n";
 		return EXIT_FAILURE;
 	}
 	cout << "Loaded " << cloud->size() << " points in cloud\n";
 
+	// Save normals
+	PointCloud<PointNormal>::Ptr pn(new PointCloud<PointNormal>());
+	concatenateFields(*cloud, *normals, *pn);
+	io::savePCDFileASCII("./output/normals.pcd", *normals);
+	io::savePCDFileASCII("./output/pointNormals.pcd", *pn);
+
 	DataHolder holder(cloud, normals);
 	Ball ball = Ball(holder, ballRadius);
 	Front front;
 	vector<Triangle> outputMesh;
+
+	cout << "Constructing mesh using ball radius " << ballRadius << "\n";
 
 	// Create the mesh
 	while (true)
@@ -68,6 +79,8 @@ int main(int _argn, char **_argv)
 				// Mark edge as boundary
 				edge->setActive(false);
 			}
+
+			Writer::writeMesh("mesh", outputMesh, true);
 		}
 
 		Triangle seed;
@@ -78,6 +91,8 @@ int main(int _argn, char **_argv)
 		}
 		else
 			break;
+
+		Writer::writeMesh("mesh", outputMesh, true);
 	}
 
 	cout << "Writing output mesh\n";

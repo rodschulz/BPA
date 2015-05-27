@@ -5,8 +5,12 @@
 #include "Writer.h"
 #include <fstream>
 #include <map>
+#include <sstream>
 
 using namespace pcl;
+
+#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 
 Writer::Writer()
 {
@@ -41,10 +45,15 @@ void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_
 	output.close();
 }
 
-void Writer::writeMesh(const string &_filename, const vector<Triangle> &_meshData)
+void Writer::writeMesh(const string &_filename, const vector<Triangle> &_meshData, const bool _addSequential)
 {
+	static int sequential = 0;
+
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename + POLYGON_EXTENSION;
+	string name = OUTPUT_FOLDER + _filename;
+	if (_addSequential)
+		name += SSTR(sequential++);
+	name += POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	output.precision(10);
@@ -71,14 +80,14 @@ void Writer::writeMesh(const string &_filename, const vector<Triangle> &_meshDat
 
 	output << "OFF\n#number of points, number of faces, number of edges\n";
 	int points = pointMap.size();
-	int faces = _meshData.size() - 1;
+	int faces = _meshData.size();
 	output << points << " " << faces << " " << points << "\n";
 
 	output << "#x, y, z\n";
 	for (map<PointXYZ *, int>::iterator it = pointMap.begin(); it != pointMap.end(); it++)
 		output << it->first->x << " " << it->first->y << " " << it->first->z << "\n";
 
-	output << "#Polygons faces";
+	output << "#Polygons faces\n";
 	for (size_t k = 0; k < sides.size(); k++)
 		output << "3 " << sides[k][0] << " " << sides[k][1] << " " << sides[k][2] << "\n";
 
