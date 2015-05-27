@@ -27,7 +27,7 @@ int main(int _argn, char **_argv)
 	}
 
 	string inputFile = _argv[1];
-	double ballRadius = 0.001;
+	double ballRadius = 0.002;
 
 	cout << "Loading file " << inputFile << "\n";
 
@@ -73,14 +73,14 @@ int main(int _argn, char **_argv)
 //					glue();
 //				if (inFront(Edge(edge.getPoint(1), p), front))
 //					glue();
+
+				Writer::writeMesh("mesh", cloud, outputMesh, true);
 			}
 			else
 			{
 				// Mark edge as boundary
 				edge->setActive(false);
 			}
-
-			Writer::writeMesh("mesh", outputMesh, true);
 		}
 
 		Triangle seed;
@@ -92,7 +92,7 @@ int main(int _argn, char **_argv)
 		else
 			break;
 
-		Writer::writeMesh("mesh", outputMesh, true);
+		Writer::writeMesh("mesh", cloud, outputMesh, true);
 	}
 
 	cout << "Writing output mesh\n";

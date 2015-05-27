@@ -140,7 +140,10 @@ bool Ball::findSeedTriangle(Triangle &_seedTriangle)
 									used->at(index1) = true;
 									used->at(index2) = true;
 
-									Writer::writeCircumscribedSphere("seedTriangle", ballCenter, ballRadius, _seedTriangle);
+									PointCloud<PointXYZ>::Ptr neighbors(new PointCloud<PointXYZ>());
+									for (size_t t = 0; t < indices.size(); t++)
+										neighbors->push_back(cloud->at(indices[t]));
+									Writer::writeCircumscribedSphere("seed", ballCenter, ballRadius, _seedTriangle, neighbors);
 									return true;
 								}
 							}
