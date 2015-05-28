@@ -143,7 +143,7 @@ bool Ball::findSeedTriangle(Triangle &_seedTriangle)
 									PointCloud<PointXYZ>::Ptr neighbors(new PointCloud<PointXYZ>());
 									for (size_t t = 0; t < indices.size(); t++)
 										neighbors->push_back(cloud->at(indices[t]));
-									Writer::writeCircumscribedSphere("seed", ballCenter, ballRadius, _seedTriangle, neighbors);
+									Writer::writeCircumscribedSphere("seed", ballCenter, ballRadius, _seedTriangle, neighbors, true);
 									return true;
 								}
 							}

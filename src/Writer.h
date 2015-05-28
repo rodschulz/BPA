@@ -16,7 +16,7 @@ using namespace std;
 class Writer
 {
 public:
-	static void writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointXYZ>::Ptr &_neighborhood);
+	static void writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointXYZ>::Ptr &_neighborhood, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const vector<Triangle> &_meshData, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const PointCloud<PointXYZ>::Ptr &_cloud, const vector<Triangle> &_meshData, const bool _addSequential = false);
 	static void writeTriangle(const string &_filename, const Triangle &_triangle);

@@ -21,10 +21,15 @@ Writer::~Writer()
 {
 }
 
-void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointXYZ>::Ptr &_neighborhood)
+void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointXYZ>::Ptr &_neighborhood, const bool _addSequential)
 {
+	static int sequential = 0;
+
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename + POLYGON_EXTENSION;
+	string name = OUTPUT_FOLDER + _filename;
+	if (_addSequential)
+		name += SSTR(sequential++);
+	name += POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	output << fixed;
