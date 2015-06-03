@@ -17,15 +17,16 @@ Edge::Edge()
 	setId();
 }
 
-Edge::Edge(const PointDat &_vertex0, const PointDat &_vertex1, const PointDat _oppositeVertex, const PointXYZ &_ballCenter)
+Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointXYZ &_center)
 {
-	vertices.push_back(_vertex0);
-	vertices.push_back(_vertex1);
-	oppositeVertex = _oppositeVertex;
+	vertices.push_back(_v0);
+	vertices.push_back(_v1);
+	oppositeVertex = _opposite;
 
-	ballCenter = _ballCenter;
-	middlePoint = PointXYZ((_vertex0.first->x + _vertex1.first->x) * 0.5, (_vertex0.first->y + _vertex1.first->y) * 0.5, (_vertex0.first->z + _vertex1.first->z) * 0.5);
+	ballCenter = _center;
+	middlePoint = PointXYZ((_v0.first->x + _v1.first->x) * 0.5, (_v0.first->y + _v1.first->y) * 0.5, (_v0.first->z + _v1.first->z) * 0.5);
 
+	// TODO check if the pivoting radius is really going to be used
 	Vector3f m = middlePoint.getVector3fMap();
 	Vector3f c = ballCenter.getVector3fMap();
 	pivotingRadius = (m - c).norm();
@@ -76,8 +77,7 @@ bool Edge::operator<(const Edge &_other) const
 
 bool Edge::operator==(const Edge &_other) const
 {
-	bool equals = (vertices[0] == _other.vertices[0] || vertices[0] == _other.vertices[1])
-			&& (vertices[1] == _other.vertices[0] || vertices[1] == _other.vertices[1]);
+	bool equals = (vertices[0] == _other.vertices[0] || vertices[0] == _other.vertices[1]) && (vertices[1] == _other.vertices[0] || vertices[1] == _other.vertices[1]);
 
 	return equals;
 }
@@ -97,7 +97,7 @@ bool Edge::isActive() const
 	return active;
 }
 
-PointDat Edge::getVertex(const int _n) const
+PointData Edge::getVertex(const int _n) const
 {
 	if (_n < 2)
 		return vertices[_n];
@@ -105,7 +105,7 @@ PointDat Edge::getVertex(const int _n) const
 		return make_pair<PointXYZ *, int>(NULL, -1);
 }
 
-PointDat Edge::getOppositeVertex() const
+PointData Edge::getOppositeVertex() const
 {
 	return oppositeVertex;
 }

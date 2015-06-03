@@ -11,7 +11,7 @@ Triangle::Triangle()
 	ballRadius = 0;
 }
 
-Triangle::Triangle(const PointXYZ &_vertex0, const PointXYZ &_vertex1, const PointXYZ &_vertex2, const int _index0, const int _index1, const int _index2, const PointXYZ &_ballCenter, const double _ballRadius)
+Triangle::Triangle(const PointNormal &_vertex0, const PointNormal &_vertex1, const PointNormal &_vertex2, const int _index0, const int _index1, const int _index2, const PointXYZ &_ballCenter, const double _ballRadius)
 {
 	vertices.resize(3);
 	vertices[0] = make_pair((PointXYZ *) &_vertex0, _index0);
@@ -44,7 +44,7 @@ Triangle &Triangle::operator=(const Triangle &_other)
 	return *this;
 }
 
-PointDat Triangle::getVertex(const int _n) const
+PointData Triangle::getVertex(const int _n) const
 {
 	if (_n < 3)
 		return vertices[_n];

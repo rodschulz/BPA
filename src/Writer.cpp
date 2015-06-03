@@ -3,15 +3,10 @@
  * 2015
  */
 #include "Writer.h"
-#include <fstream>
-#include <map>
-#include <sstream>
 
-using namespace pcl;
-
-#define PRECISION	12
-#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
-        ( std::ostringstream() << std::dec << x ) ).str()
+#define PRECISION		12
+#define SSTR(x)			dynamic_cast< std::ostringstream & >( \
+				( std::ostringstream() << std::dec << x ) ).str()
 
 Writer::Writer()
 {
@@ -21,7 +16,7 @@ Writer::~Writer()
 {
 }
 
-void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointXYZ>::Ptr &_neighborhood, const bool _addSequential)
+void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential)
 {
 	static int sequential = 0;
 
@@ -51,7 +46,7 @@ void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_
 	output.close();
 }
 
-void Writer::writeMesh(const string &_filename, const PointCloud<PointXYZ>::Ptr &_cloud, const vector<Triangle> &_meshData, const bool _addSequential)
+void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<Triangle> &_meshData, const bool _addSequential)
 {
 	static int sequential = 0;
 
@@ -106,6 +101,35 @@ void Writer::writeTriangle(const string &_filename, const Triangle &_triangle)
 	output.close();
 }
 
+void Writer::generateCloud(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output)
+{
+	_output.precision(PRECISION);
+	_output << fixed;
+
+	// Write header
+	_output << "appearance { linewidth 4 } VECT\n\n";
+	_output << "# num of lines, num of vertices, num of colors\n";
+	_output << _cloud->size() << " " << _cloud->size() << " 1\n\n";
+
+	_output << "# num of vertices in each line\n";
+	for (size_t i = 0; i < _cloud->size(); i++)
+		_output << "1 ";
+	_output << "\n\n";
+
+	_output << "# num of colors for each line\n1 ";
+	for (size_t i = 1; i < _cloud->size(); i++)
+		_output << "0 ";
+	_output << "\n\n";
+
+	_output << "# points coordinates\n";
+	for (size_t i = 0; i < _cloud->size(); i++)
+		_output << _cloud->points[i].x << " " << _cloud->points[i].y << " " << _cloud->points[i].z << "\n";
+	_output << "\n";
+
+	_output << "# Color for vertices in RGBA\n";
+	_output << "1 0 0 1\n";
+}
+
 void Writer::generateMesh(const vector<Triangle> &_meshData, ofstream &_output)
 {
 	_output.precision(PRECISION);
@@ -142,35 +166,6 @@ void Writer::generateMesh(const vector<Triangle> &_meshData, ofstream &_output)
 	_output << "# polygon faces\n";
 	for (size_t k = 0; k < sides.size(); k++)
 		_output << "3 " << sides[k][0] << " " << sides[k][1] << " " << sides[k][2] << "\n";
-}
-
-void Writer::generateCloud(const PointCloud<PointXYZ>::Ptr &_cloud, ofstream &_output)
-{
-	_output.precision(PRECISION);
-	_output << fixed;
-
-	// Write header
-	_output << "appearance { linewidth 4 } VECT\n\n";
-	_output << "# num of lines, num of vertices, num of colors\n";
-	_output << _cloud->size() << " " << _cloud->size() << " 1\n\n";
-
-	_output << "# num of vertices in each line\n";
-	for (size_t i = 0; i < _cloud->size(); i++)
-		_output << "1 ";
-	_output << "\n\n";
-
-	_output << "# num of colors for each line\n1 ";
-	for (size_t i = 1; i < _cloud->size(); i++)
-		_output << "0 ";
-	_output << "\n\n";
-
-	_output << "# points coordinates\n";
-	for (size_t i = 0; i < _cloud->size(); i++)
-		_output << _cloud->points[i].x << " " << _cloud->points[i].y << " " << _cloud->points[i].z << "\n";
-	_output << "\n";
-
-	_output << "# Color for vertices in RGBA\n";
-	_output << "1 0 0 1\n";
 }
 
 void Writer::generateSphere(const PointXYZ &_center, const double _radius, ofstream &_output)

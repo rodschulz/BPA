@@ -24,31 +24,42 @@ void Helper::removeNANs(PointCloud<PointXYZ>::Ptr &_cloud)
 	removeNaNFromPointCloud(*_cloud, *_cloud, mapping);
 }
 
-void Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _searchRadius, PointCloud<Normal>::Ptr &_normals)
+PointCloud<Normal>::Ptr Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _searchRadius)
 {
-	// Search method used for the knn search
-	search::KdTree<PointXYZ>::Ptr kdtree(new search::KdTree<PointXYZ>);
+	PointCloud<Normal>::Ptr normals(new PointCloud<Normal>());
 
+	search::KdTree<PointXYZ>::Ptr kdtree(new search::KdTree<PointXYZ>);
 	NormalEstimationOMP<PointXYZ, Normal> normalEstimation;
 	normalEstimation.setInputCloud(_cloud);
-	normalEstimation.setRadiusSearch(_searchRadius);
+
+	if (_searchRadius > 0)
+		normalEstimation.setRadiusSearch(_searchRadius);
+	else
+		normalEstimation.setKSearch(10);
+
 	normalEstimation.setSearchMethod(kdtree);
-	normalEstimation.compute(*_normals);
+	normalEstimation.compute(*normals);
+
+	return normals;
 }
 
-bool Helper::getCloudAndNormals(const string &_inputFile, const double _estimationRadius, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals)
+bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal>::Ptr &_cloud, const double _estimationRadius)
 {
 	bool status = false;
 
-	if (io::loadPCDFile<PointXYZ>(_inputFile, *_cloud) != 0)
-		cout << "ERROR: Can't read file from disk (" << _inputFile << ")\n";
-	else
+	PointCloud<PointXYZ>::Ptr dataXYZ(new PointCloud<PointXYZ>());
+	if (io::loadPCDFile<PointXYZ>(_inputFile, *dataXYZ) == 0)
 	{
-		// Remove NANs and calculate normals
-		Helper::removeNANs(_cloud);
-		Helper::getNormals(_cloud, _estimationRadius, _normals);
+		Helper::removeNANs(dataXYZ);
+		PointCloud<Normal>::Ptr normals = Helper::getNormals(dataXYZ, _estimationRadius);
+
+		_cloud->clear();
+		concatenateFields(*dataXYZ, *normals, *_cloud);
+
 		status = true;
 	}
+	else
+		cout << "ERROR: Can't read file from disk (" << _inputFile << ")\n";
 
 	return status;
 }

@@ -21,21 +21,18 @@ template<typename T> int sign(T val)
 
 struct DataHolder
 {
-	PointCloud<PointXYZ>::Ptr cloud;
-	PointCloud<Normal>::Ptr normals;
+	PointCloud<PointNormal>::Ptr cloud;
 	vector<bool> used;
 
 	DataHolder()
 	{
 		cloud.reset();
-		normals.reset();
 		used.clear();
 	}
 
-	DataHolder(PointCloud<PointXYZ>::Ptr _cloud, PointCloud<Normal>::Ptr _normals)
+	DataHolder(PointCloud<PointNormal>::Ptr &_cloud)
 	{
 		cloud = _cloud;
-		normals = _normals;
 		used = vector<bool>(_cloud->size(), false);
 	}
 };
@@ -44,8 +41,8 @@ class Helper
 {
 public:
 	static void removeNANs(PointCloud<PointXYZ>::Ptr &_cloud);
-	static void getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _searchRadius, PointCloud<Normal>::Ptr &_normals);
-	static bool getCloudAndNormals(const string &_inputFile, const double _estimationRadius, PointCloud<PointXYZ>::Ptr &_cloud, PointCloud<Normal>::Ptr &_normals);
+	static PointCloud<Normal>::Ptr getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _searchRadius = -1);
+	static bool getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal>::Ptr &_cloud, const double _estimationRadius = -1);
 	static int getActiveEdge(vector<Edge> &_front);
 
 private:

@@ -11,13 +11,17 @@
 using namespace pcl;
 using namespace std;
 
-typedef pair<PointXYZ *, int> PointDat;
+// Edge smart pointer
+class Edge;
+typedef boost::shared_ptr<Edge> EdgePtr;
+
+typedef pair<PointXYZ *, int> PointData;
 
 class Edge
 {
 public:
 	Edge();
-	Edge(const PointDat &_vertex1, const PointDat &_vertex2, const PointDat _oppositeVertex, const PointXYZ &_ballCenter);
+	Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointXYZ &_center);
 	Edge(const Edge &_other);
 	~Edge();
 
@@ -28,15 +32,15 @@ public:
 
 	void setActive(const bool _active);
 	bool isActive() const;
-	PointDat getVertex(const int _point) const;
-	PointDat getOppositeVertex() const;
+	PointData getVertex(const int _point) const;
+	PointData getOppositeVertex() const;
 	PointXYZ getMiddlePoint() const;
 	PointXYZ getBallCenter() const;
 	double getPivotingRadius() const;
 
 private:
-	vector<PointDat> vertices;
-	PointDat oppositeVertex;
+	vector<PointData> vertices;
+	PointData oppositeVertex;
 	PointXYZ ballCenter;
 	PointXYZ middlePoint;
 	double pivotingRadius;
@@ -45,5 +49,3 @@ private:
 
 	void setId();
 };
-
-typedef boost::shared_ptr<Edge> EdgePtr;
