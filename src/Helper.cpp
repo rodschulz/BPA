@@ -75,3 +75,16 @@ int Helper::getActiveEdge(vector<Edge> &_front)
 	}
 	return -1;
 }
+
+PointNormal Helper::makePointNormal(const float _x, const float _y, const float _z, const float _nx, const float _ny, const float _nz, const float _curvature)
+{
+	PointNormal point;
+	point.x = _x;
+	point.y = _y;
+	point.z = _z;
+	point.normal_x = _nx;
+	point.normal_y = _ny;
+	point.normal_z = _nz;
+	point.curvature = _curvature;
+	return point;
+}

@@ -18,6 +18,10 @@ using namespace pcl;
 
 int main(int _argn, char **_argv)
 {
+	/// Main task list
+	// TODO review triangle constructor and make it fit for the new points being used (currently it makes a bad cast)
+	// TODO resolve the return data in method 'getEdge' in class Triangle
+
 	system("rm -rf ./output/*");
 
 	if (_argn < 2)
@@ -40,7 +44,7 @@ int main(int _argn, char **_argv)
 	cout << "Loaded " << cloud->size() << " points in cloud\n";
 
 	Pivoter pivoter(cloud, ballRadius);
-	vector<Triangle> outputMesh;
+	vector<TrianglePtr> outputMesh;
 	cout << "Beginning mesh construction using ball r=" << ballRadius << "\n";
 	while (true)
 	{
@@ -48,16 +52,17 @@ int main(int _argn, char **_argv)
 		//EdgePtr edge;
 
 		// Find a new seed
-		Triangle seed;
-//		if (ball.findSeedTriangle(seed))
-//		{
-//			outputMesh.push_back(seed);
+		TrianglePtr seed;
+		if ((seed = pivoter.findSeed()) != NULL)
+		{
+			outputMesh.push_back(seed);
 //			front.addEdges(seed);
-//		}
-//		else
-//			break;
+			Writer::writeMesh("mesh", cloud, outputMesh, seed, true);
+		}
+		else
+			break;
 
-		Writer::writeMesh("mesh", cloud, outputMesh, true);
+		//Writer::writeMesh("mesh", cloud, outputMesh, true);
 	}
 
 	////////////////////////////////
@@ -108,7 +113,7 @@ int main(int _argn, char **_argv)
 //	}
 
 	cout << "Writing output mesh\n";
-	Writer::writeMesh("mesh", cloud, outputMesh);
+	//Writer::writeMesh("mesh", cloud, outputMesh);
 
 	cout << "Finished\n";
 	return EXIT_SUCCESS;

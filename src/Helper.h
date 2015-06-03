@@ -19,24 +19,6 @@ template<typename T> int sign(T val)
 	return (T(0) < val) - (val < T(0));
 }
 
-struct DataHolder
-{
-	PointCloud<PointNormal>::Ptr cloud;
-	vector<bool> used;
-
-	DataHolder()
-	{
-		cloud.reset();
-		used.clear();
-	}
-
-	DataHolder(PointCloud<PointNormal>::Ptr &_cloud)
-	{
-		cloud = _cloud;
-		used = vector<bool>(_cloud->size(), false);
-	}
-};
-
 class Helper
 {
 public:
@@ -45,6 +27,7 @@ public:
 	static bool getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal>::Ptr &_cloud, const double _estimationRadius = -1);
 	static int getActiveEdge(vector<Edge> &_front);
 
+	static PointNormal makePointNormal(const float _x, const float _y, const float _z, const float _nx = 0, const float _ny = 0, const float _nz = 1, const float _curvature = 0);
 private:
 	Helper();
 	~Helper();

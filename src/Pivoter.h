@@ -22,7 +22,41 @@ public:
 	Pivoter(const PointCloud<PointNormal>::Ptr &_cloud, const double _ballRadius);
 	~Pivoter();
 
+	TrianglePtr findSeed();
+
 private:
+	pair<Vector3f, double> getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal) const;
+	inline bool getBallCenter(const pair<Vector3f, double> &_circumscribedCircle, const Vector3f &_normal, Vector3f &_ballCenter) const
+	{
+		bool status = false;
+
+		double squaredDistance = ballRadius * ballRadius - _circumscribedCircle.second * _circumscribedCircle.second;
+		if (squaredDistance > 0)
+		{
+			double distance = sqrt(fabs(squaredDistance));
+			_ballCenter = _circumscribedCircle.first + distance * _normal;
+			status = true;
+		}
+
+		return status;
+	}
+	bool isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2)
+	{
+		if (_data.size() > 3)
+			return false;
+		if (_data.empty())
+			return true;
+
+		for (size_t i = 0; i < _data.size(); i++)
+		{
+			if (_data[i] == _index0 || _data[i] == _index1 || _data[i] == _index2)
+				continue;
+			else
+				return false;
+		}
+		return true;
+	}
+
 	KdTreeFLANN<PointNormal> kdtree;
 	PointCloud<PointNormal>::Ptr cloud;
 	vector<bool> used;

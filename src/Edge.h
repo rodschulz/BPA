@@ -15,13 +15,13 @@ using namespace std;
 class Edge;
 typedef boost::shared_ptr<Edge> EdgePtr;
 
-typedef pair<PointXYZ *, int> PointData;
+typedef pair<PointNormal *, int> PointData;
 
 class Edge
 {
 public:
 	Edge();
-	Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointXYZ &_center);
+	Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointNormal &_center);
 	Edge(const Edge &_other);
 	~Edge();
 
@@ -34,15 +34,15 @@ public:
 	bool isActive() const;
 	PointData getVertex(const int _point) const;
 	PointData getOppositeVertex() const;
-	PointXYZ getMiddlePoint() const;
-	PointXYZ getBallCenter() const;
+	PointNormal getMiddlePoint() const;
+	PointNormal getBallCenter() const;
 	double getPivotingRadius() const;
 
 private:
 	vector<PointData> vertices;
 	PointData oppositeVertex;
-	PointXYZ ballCenter;
-	PointXYZ middlePoint;
+	PointNormal ballCenter;
+	PointNormal middlePoint;
 	double pivotingRadius;
 	bool active;
 	long id;

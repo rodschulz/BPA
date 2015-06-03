@@ -4,27 +4,28 @@
  */
 #include "Edge.h"
 #include <eigen3/Eigen/src/Core/Matrix.h>
+#include "Helper.h"
 
 using namespace Eigen;
 
 Edge::Edge()
 {
 	vertices.clear();
-	oppositeVertex = make_pair<PointXYZ *, int>(NULL, -1);
-	ballCenter = middlePoint = PointXYZ(0, 0, 0);
+	oppositeVertex = make_pair<PointNormal *, int>(NULL, -1);
+	ballCenter = middlePoint = PointNormal();
 	pivotingRadius = 0;
 	active = false;
 	setId();
 }
 
-Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointXYZ &_center)
+Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointNormal &_ballCenter)
 {
 	vertices.push_back(_v0);
 	vertices.push_back(_v1);
 	oppositeVertex = _opposite;
 
-	ballCenter = _center;
-	middlePoint = PointXYZ((_v0.first->x + _v1.first->x) * 0.5, (_v0.first->y + _v1.first->y) * 0.5, (_v0.first->z + _v1.first->z) * 0.5);
+	ballCenter = _ballCenter;
+	middlePoint = Helper::makePointNormal((_v0.first->x + _v1.first->x) * 0.5, (_v0.first->y + _v1.first->y) * 0.5, (_v0.first->z + _v1.first->z) * 0.5);
 
 	// TODO check if the pivoting radius is really going to be used
 	Vector3f m = middlePoint.getVector3fMap();
@@ -102,7 +103,7 @@ PointData Edge::getVertex(const int _n) const
 	if (_n < 2)
 		return vertices[_n];
 	else
-		return make_pair<PointXYZ *, int>(NULL, -1);
+		return make_pair<PointNormal *, int>(NULL, -1);
 }
 
 PointData Edge::getOppositeVertex() const
@@ -110,12 +111,12 @@ PointData Edge::getOppositeVertex() const
 	return oppositeVertex;
 }
 
-PointXYZ Edge::getMiddlePoint() const
+PointNormal Edge::getMiddlePoint() const
 {
 	return middlePoint;
 }
 
-PointXYZ Edge::getBallCenter() const
+PointNormal Edge::getBallCenter() const
 {
 	return ballCenter;
 }

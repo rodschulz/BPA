@@ -21,18 +21,49 @@ class Triangle
 {
 public:
 	Triangle();
-	Triangle(const PointNormal &_v0, const PointNormal &_v1, const PointNormal &_v2, const int _index0, const int _index1, const int _index2, const PointXYZ &_ballCenter, const double _ballRadius);
+	Triangle(const PointNormal &_v0, const PointNormal &_v1, const PointNormal &_v2, const int _index0, const int _index1, const int _index2, const PointNormal &_ballCenter, const double _ballRadius);
 	Triangle(const Triangle &_other);
 	~Triangle();
 
 	Triangle &operator=(const Triangle &_other);
-	PointData getVertex(const int _n) const;
-	int getVertexIndex(const int _n) const;
-	Edge getEdge(const int _n) const;
+
+	inline PointData getVertex(const int _n) const
+	{
+		if (_n < 3)
+			return vertices[_n];
+		else
+			return make_pair<PointNormal *, int>(NULL, -1);
+	}
+
+	inline int getVertexIndex(const int _n) const
+	{
+		if (_n < 3)
+			return vertices[_n].second;
+		else
+			return -1;
+	}
+
+	inline Edge getEdge(const int _n) const
+	{
+		int index0 = _n % 3;
+		int index1 = (_n + 1) % 3;
+		int index2 = (_n + 2) % 3;
+		return Edge(vertices[index0], vertices[index1], vertices[index2], ballCenter);
+	}
+
+	inline PointNormal getBallCenter() const
+	{
+		return ballCenter;
+	}
+
+	inline double getBallRadius()
+	{
+		return ballRadius;
+	}
 
 private:
 	vector<PointData> vertices;
-	PointXYZ ballCenter;
+	PointNormal ballCenter;
 	double ballRadius;
 	Vector3f normal;
 };
