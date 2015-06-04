@@ -4,13 +4,8 @@
  */
 #pragma once
 
-#include <map>
-#include <vector>
-#include <pcl/common/common.h>
 #include "Triangle.h"
-
-using namespace std;
-using namespace pcl;
+#include <map>
 
 class Front
 {
@@ -18,16 +13,12 @@ public:
 	Front();
 	~Front();
 
-	void addEdges(const Triangle &_triangle);
-	void join(Edge *_edge, const PointXYZ *_point, const pair<int, Triangle> &_pivotData);
-
-	bool inFront(const int _pointIndex) const;
-	bool InMesh(const int _pointIndex) const;
-	bool getActiveEdge(Edge **_edge);
+	EdgePtr getActiveEdge() const;
+	void addEdges(const TrianglePtr &_triangle);
+	void joinAndFix(const pair<int, TrianglePtr> &_data);
+	bool inFront(PointNormal *_point);
 
 private:
-	map<int, bool> frontPointMap;
-	map<int, bool> meshPointMap;
-	map<Edge, bool> edgeMap;
-	map<Edge, bool> activeEdgeMap;
+
+	map<PointNormal *, int> frontPoints;
 };

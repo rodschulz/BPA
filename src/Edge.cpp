@@ -15,7 +15,6 @@ Edge::Edge()
 	ballCenter = middlePoint = PointNormal();
 	pivotingRadius = 0;
 	active = false;
-	setId();
 }
 
 Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointNormal &_ballCenter)
@@ -33,7 +32,6 @@ Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposit
 	pivotingRadius = (m - c).norm();
 
 	active = true;
-	setId();
 }
 
 Edge::Edge(const Edge &_other)
@@ -46,7 +44,6 @@ Edge::Edge(const Edge &_other)
 
 	middlePoint = _other.middlePoint;
 	active = _other.active;
-	id = _other.id;
 }
 
 Edge::~Edge()
@@ -65,7 +62,6 @@ Edge &Edge::operator=(const Edge &_other)
 
 		middlePoint = _other.middlePoint;
 		active = _other.active;
-		id = _other.id;
 	}
 
 	return *this;
@@ -124,10 +120,4 @@ PointNormal Edge::getBallCenter() const
 double Edge::getPivotingRadius() const
 {
 	return pivotingRadius;
-}
-
-void Edge::setId()
-{
-	static long currentId = 0;
-	id = currentId++;
 }

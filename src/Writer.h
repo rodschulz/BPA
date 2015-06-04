@@ -18,6 +18,9 @@ using namespace Eigen;
 #define SPHERE_EXTENSION	".sph"
 #define POLYGON_EXTENSION	".off"
 
+#define SSTR(x)			dynamic_cast< std::ostringstream & >( \
+				( std::ostringstream() << std::dec << x ) ).str()
+
 class Writer
 {
 public:
@@ -35,4 +38,17 @@ private:
 	static void generateCloud(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
 	static void generateSphere(const Vector3f &_center, const double _radius, ofstream &_output);
 	static void generateTriangle(const Triangle &_triangle, ofstream &_output);
+	static void generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
+
+	static inline string generateName(const string &_name, const string &_extension, bool _addSequential = false)
+	{
+		static int sequential = 0;
+
+		string name = OUTPUT_FOLDER + _name + "_";
+		if (_addSequential)
+			name += SSTR(sequential++);
+		name += _extension;
+
+		return name;
+	}
 };

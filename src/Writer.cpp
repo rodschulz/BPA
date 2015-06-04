@@ -5,10 +5,6 @@
 #include "Writer.h"
 
 #define PRECISION		12
-#define SSTR(x)			dynamic_cast< std::ostringstream & >( \
-				( std::ostringstream() << std::dec << x ) ).str()
-
-static int sequential = 0;
 
 Writer::Writer()
 {
@@ -20,13 +16,9 @@ Writer::~Writer()
 
 void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential)
 {
-	static int sequential = 0;
+	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
 
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename;
-	if (_addSequential)
-		name += SSTR(sequential++);
-	name += POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	output << fixed;
@@ -51,11 +43,9 @@ void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_
 
 void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const bool _addSequential)
 {
+	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename;
-	if (_addSequential)
-		name += SSTR(sequential++);
-	name += POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	// Write header
@@ -69,17 +59,19 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateCloud(_cloud, output);
 	output << "}\n\n";
 
+	output << "{ ";
+	generateNormals(_cloud, output);
+	output << "}\n\n";
+
 	output << "}\n";
 	output.close();
 }
 
 void Writer::writeMesh(const string &_filename, const vector<TrianglePtr> &_meshData, const bool _addSequential)
 {
+	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename;
-	if (_addSequential)
-		name += SSTR(sequential++);
-	name += POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	output << fixed;
@@ -90,11 +82,9 @@ void Writer::writeMesh(const string &_filename, const vector<TrianglePtr> &_mesh
 
 void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const bool _addSequential)
 {
+	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename;
-	if (_addSequential)
-		name += SSTR(sequential++);
-	name += POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	// Write header
@@ -113,14 +103,19 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateCloud(_cloud, output);
 	output << "}\n\n";
 
+	output << "{ ";
+	generateNormals(_cloud, output);
+	output << "}\n\n";
+
 	output << "}\n";
 	output.close();
 }
 
 void Writer::writeTriangle(const string &_filename, const Triangle &_triangle)
 {
+	string name = generateName(_filename, POLYGON_EXTENSION);
+
 	ofstream output;
-	string name = OUTPUT_FOLDER + _filename + POLYGON_EXTENSION;
 	output.open(name.c_str(), fstream::out);
 
 	output << fixed;
@@ -216,4 +211,37 @@ void Writer::generateTriangle(const Triangle &_triangle, ofstream &_output)
 		_output << p->x << " " << p->y << " " << p->z << "\n";
 	}
 	_output << "\n3 0 1 2\n";
+}
+
+void Writer::generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output)
+{
+	_output.precision(PRECISION);
+	_output << fixed;
+
+	// Write header
+	_output << "appearance { linewidth 1 } VECT\n\n";
+	_output << "# num of lines, num of vertices, num of colors\n";
+	_output << _cloud->size() << " " << _cloud->size() * 2 << " 1\n\n";
+
+	_output << "# num of vertices in each line\n";
+	for (size_t i = 0; i < _cloud->size(); i++)
+		_output << "2 ";
+	_output << "\n\n";
+
+	_output << "# num of colors for each line\n1 ";
+	for (size_t i = 1; i < _cloud->size(); i++)
+		_output << "0 ";
+	_output << "\n\n";
+
+	float factor = 0.005;
+	_output << "# points coordinates\n";
+	for (size_t i = 0; i < _cloud->size(); i++)
+	{
+		_output << _cloud->points[i].x << " " << _cloud->points[i].y << " " << _cloud->points[i].z << "\n";
+		_output << _cloud->points[i].x + _cloud->points[i].normal_x * factor << " " << _cloud->points[i].y + _cloud->points[i].normal_y * factor << " " << _cloud->points[i].z + _cloud->points[i].normal_z * factor << "\n";
+	}
+	_output << "\n";
+
+	_output << "# Color for vertices in RGBA\n";
+	_output << "0 0 1 1\n";
 }

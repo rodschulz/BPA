@@ -19,6 +19,21 @@ Pivoter::~Pivoter()
 {
 }
 
+bool Pivoter::isUsed(const int _index) const
+{
+	return used[_index];
+}
+
+void Pivoter::setUsed(const int _index)
+{
+	used[_index];
+}
+
+pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
+{
+	return make_pair(-1, TrianglePtr());
+}
+
 TrianglePtr Pivoter::findSeed()
 {
 	// TODO this could be faster by storing only indices of points actually unused
@@ -128,3 +143,20 @@ pair<Vector3f, double> Pivoter::getCircumscribedCircle(const int _index0, const 
 	return make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
 }
 
+bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2) const
+{
+	if (_data.size() > 3)
+		return false;
+	if (_data.empty())
+		return true;
+
+	for (size_t i = 0; i < _data.size(); i++)
+	{
+		if (_data[i] == _index0 || _data[i] == _index1 || _data[i] == _index2)
+			continue;
+		else
+			return false;
+	}
+
+	return true;
+}
