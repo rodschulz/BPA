@@ -24,7 +24,6 @@ int main(int _argn, char **_argv)
 	// TODO fix the pivoting method to take into account points that can't be added because the face normal is downwards
 	//
 
-
 	system("rm -rf ./output/*");
 
 	if (_argn < 2)
@@ -57,13 +56,15 @@ int main(int _argn, char **_argv)
 		EdgePtr edge;
 		while ((edge = front.getActiveEdge()) != NULL)
 		{
+			cout << "Testing edge " << *edge << "\n";
+
 			pair<int, TrianglePtr> data = pivoter.pivot(edge);
 			if (data.first != -1 && (!pivoter.isUsed(data.first) || front.inFront(&cloud->points[data.first])))
 			{
-				pivoter.setUsed(data.first);
+				cout << "Adding point " << data.first << " to front\n";
 				mesh.push_back(data.second);
-				front.joinAndFix(data);
-				Writer::writeMesh("mesh", cloud, mesh, true);
+				front.joinAndFix(data, pivoter);
+				Writer::writeMesh("addedPoint", cloud, mesh, data.second, true);
 			}
 			else
 				// Mark edge as boundary

@@ -8,6 +8,12 @@
 
 using namespace Eigen;
 
+ostream &operator<<(ostream &_stream, const Edge &_edge)
+{
+	_stream << "(" << _edge.vertices[0].second << ", " << _edge.vertices[1].second << ")";
+	return _stream;
+}
+
 Edge::Edge()
 {
 	vertices.clear();

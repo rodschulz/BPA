@@ -55,8 +55,37 @@ void Front::addEdges(const TrianglePtr &_triangle)
 	}
 }
 
-void Front::joinAndFix(const pair<int, TrianglePtr> &_data)
+void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 {
+	if (!_pivoter.isUsed(_data.first))
+	{
+		/**
+		 * This is the easy case, the new point has not been used
+		 */
+
+		// Add new edges
+		EdgePtr edge1 = _data.second->getEdge(1);
+		EdgePtr edge2 = _data.second->getEdge(2);
+		front.insert(pos, edge1);
+		front.insert(pos, edge2);
+
+		cout << "\tEdge added: " << *edge1 << "\n";
+		cout << "\tEdge added: " << *edge2 << "\n";
+
+		// Remove replaced edge
+		cout << "\tEdge removed: " << **pos << "\n";
+		front.erase(pos);
+
+		// Move iterator to the first added new edge
+		advance(pos, -2);
+		//pos--;
+
+		// Finally mark the point as used
+		_pivoter.setUsed(_data.first);
+	}
+	else
+	{
+	}
 }
 
 bool Front::inFront(PointNormal *_point)

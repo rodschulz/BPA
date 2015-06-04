@@ -5,6 +5,7 @@
 #pragma once
 
 #include "Triangle.h"
+#include "Pivoter.h"
 #include <map>
 #include <list>
 
@@ -18,7 +19,7 @@ public:
 
 	EdgePtr getActiveEdge();
 	void addEdges(const TrianglePtr &_triangle);
-	void joinAndFix(const pair<int, TrianglePtr> &_data);
+	void joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter);
 	bool inFront(PointNormal *_point);
 
 private:

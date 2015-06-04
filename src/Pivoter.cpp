@@ -33,17 +33,15 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 {
 	PointData v0 = _edge->getVertex(0);
 	PointData v1 = _edge->getVertex(1);
-	Vector3f opposite = _edge->getOppositeVertex().first->getVector3fMap();
+	PointData op = _edge->getOppositeVertex();
+
 	PointNormal edgeMiddle = _edge->getMiddlePoint();
 	double pivotingRadius = _edge->getPivotingRadius();
 
 	// Create a plane passing for the middle point and perpendicular to the edge
 	Vector3f middle = edgeMiddle.getVector3fMap();
-	Vector3f ballCenter = _edge->getBallCenter().getVector3fMap();
-	Vector3f vertex0 = v0.first->getVector3fMap();
-
-	Vector3f diff1 = 100 * (vertex0 - middle);
-	Vector3f diff2 = 100 * (ballCenter - middle);
+	Vector3f diff1 = 100 * (v0.first->getVector3fMap() - middle);
+	Vector3f diff2 = 100 * (_edge->getBallCenter().getVector3fMap() - middle);
 
 	Vector3f y = diff1.cross(diff2).normalized();
 	Vector3f normal = diff2.cross(y).normalized();
@@ -54,7 +52,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 	vector<float> squaredDistances;
 	kdtree.radiusSearch(edgeMiddle, ballRadius * 2, indices, squaredDistances);
 
-	Vector3f zeroAngle = (opposite - middle).normalized();
+	Vector3f zeroAngle = ((Vector3f) (op.first->getVector3fMap() - middle)).normalized();
 	zeroAngle = plane.projection(zeroAngle).normalized();
 
 	double currentAngle = M_PI;
@@ -63,32 +61,30 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 	// Iterate over the neighborhood pivoting the ball
 	for (size_t i = 0; i < indices.size(); i++)
 	{
-		// Skip the points already used
 		int index = indices[i];
-		if (used[index])
+		if (v0.second == index || v1.second == index || op.second == index || used[index])
 			continue;
-
-		Vector3f point = cloud->at(index).getVector3fMap();
-		double distanceToPlane = plane.absDistance(point);
 
 		/**
 		 * If the distance to the plane is less than the ball radius, then intersection between a ball
 		 * centered in the point and the plane exists
 		 */
-		if (distanceToPlane <= ballRadius)
+		Vector3f point = cloud->at(index).getVector3fMap();
+		if (plane.absDistance(point) <= ballRadius)
 		{
-			Vector3f circleNormal;
-			pair<Vector3f, double> circle = getCircumscribedCircle(v0.second, v1.second, index, circleNormal);
 			Vector3f center;
-			if (getBallCenter(circle, circleNormal, center))
+			if (getBallCenter(v0.second, v1.second, index, center))
 			{
+				PointNormal ballCenter = Helper::makePointNormal(center);
+				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
+				if (!isEmpty(neighborhood, _edge->getVertex(0).second, _edge->getVertex(1).second, index))
+					continue;
+
 				Vector3f projectedCenter = plane.projection(center);
 				double cosAngle = zeroAngle.dot(projectedCenter.normalized());
 				if (fabs(cosAngle) > 1)
 					cosAngle = sign<double>(cosAngle);
 				double angle = acos(cosAngle);
-
-				// TODO check if the ball is empty??
 
 				// TODO fix point selection according to the angle
 				if (output.first == -1 || currentAngle > angle)
@@ -116,9 +112,7 @@ TrianglePtr Pivoter::findSeed()
 			continue;
 
 		// Get the point's neighborhood
-		vector<int> indices;
-		vector<float> squaredDistances;
-		kdtree.radiusSearch(cloud->at(index0), ballRadius * 2, indices, squaredDistances);
+		vector<int> indices = getNeighbors(cloud->at(index0), ballRadius * 2);
 		if (indices.size() < 3)
 			continue;
 
@@ -135,26 +129,19 @@ TrianglePtr Pivoter::findSeed()
 				if (index1 == index2 || index2 == index0 || used[index2])
 					continue;
 
-				cout << "Testing (" << index0 << ", " << index1 << ", " << index2 << ")\n";
-
-				Vector3f normal;
-				pair<Vector3f, double> circle = getCircumscribedCircle(index0, index1, index2, normal);
-				if (circle.second < 0)
-					continue;
+				cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
 
 				Vector3f center;
-				if (getBallCenter(circle, normal, center))
+				if (getBallCenter(index0, index1, index2, center))
 				{
-					vector<int> neighborhood;
-					vector<float> dists;
-					PointNormal ballCenter = Helper::makePointNormal(center.x(), center.y(), center.z());
-					kdtree.radiusSearch(ballCenter, ballRadius, neighborhood, dists);
+					PointNormal ballCenter = Helper::makePointNormal(center);
+					vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 
 					//Writer::writeMesh("seedTesting", cloud, vector<TrianglePtr>(), TrianglePtr(new Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2, ballCenter, ballRadius)), true);
 
 					if (isEmpty(neighborhood, index0, index1, index2))
 					{
-						cout << "Seed found (" << index0 << ", " << index1 << ", " << index2 << ")\n";
+						cout << "\tSeed found (" << index0 << ", " << index1 << ", " << index2 << ")\n";
 
 						seed = TrianglePtr(new Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2, ballCenter, ballRadius));
 						used[index0] = used[index1] = used[index2] = true;
@@ -214,6 +201,25 @@ pair<Vector3f, double> Pivoter::getCircumscribedCircle(const int _index0, const 
 	return make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
 }
 
+bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _index2, Vector3f &_center) const
+{
+	bool status = false;
+
+	Vector3f normal;
+	pair<Vector3f, double> circle = getCircumscribedCircle(_index0, _index1, _index2, normal);
+	if (circle.second > 0)
+	{
+		double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;
+		if (squaredDistance > 0)
+		{
+			double distance = sqrt(fabs(squaredDistance));
+			_center = circle.first + distance * normal;
+			status = true;
+		}
+	}
+	return status;
+}
+
 bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2) const
 {
 	if (_data.size() > 3)
@@ -230,4 +236,12 @@ bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _in
 	}
 
 	return true;
+}
+
+vector<int> Pivoter::getNeighbors(const PointNormal &_point, const double _radius) const
+{
+	vector<int> indices;
+	vector<float> distances;
+	kdtree.radiusSearch(_point, _radius, indices, distances);
+	return indices;
 }

@@ -44,9 +44,11 @@ private:
 	{
 		static int sequential = 0;
 
-		string name = OUTPUT_FOLDER + _name + "_";
+		string name = OUTPUT_FOLDER + _name;
 		if (_addSequential)
-			name += SSTR(sequential++);
+		{
+			name += "_" + SSTR(sequential++);
+		}
 		name += _extension;
 
 		return name;

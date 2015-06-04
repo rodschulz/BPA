@@ -88,3 +88,16 @@ PointNormal Helper::makePointNormal(const float _x, const float _y, const float 
 	point.curvature = _curvature;
 	return point;
 }
+
+PointNormal Helper::makePointNormal(const Vector3f &_data)
+{
+	PointNormal point;
+	point.x = _data.x();
+	point.y = _data.y();
+	point.z = _data.z();
+	point.normal_x = 0;
+	point.normal_y = 0;
+	point.normal_z = 0;
+	point.curvature = 0;
+	return point;
+}

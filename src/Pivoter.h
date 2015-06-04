@@ -29,23 +29,11 @@ public:
 	void setUsed(const int _index);
 
 private:
-	bool isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2) const;
-
 	pair<Vector3f, double> getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal) const;
-	inline bool getBallCenter(const pair<Vector3f, double> &_circumscribedCircle, const Vector3f &_normal, Vector3f &_ballCenter) const
-	{
-		bool status = false;
+	bool getBallCenter(const int _index0, const int _index1, const int _index2, Vector3f &_center) const;
 
-		double squaredDistance = ballRadius * ballRadius - _circumscribedCircle.second * _circumscribedCircle.second;
-		if (squaredDistance > 0)
-		{
-			double distance = sqrt(fabs(squaredDistance));
-			_ballCenter = _circumscribedCircle.first + distance * _normal;
-			status = true;
-		}
-
-		return status;
-	}
+	bool isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2) const;
+	vector<int> getNeighbors(const PointNormal &_point, const double _radius) const;
 
 	KdTreeFLANN<PointNormal> kdtree;
 	PointCloud<PointNormal>::Ptr cloud;

@@ -7,6 +7,7 @@
 #include <pcl/common/common.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#include <ostream>
 
 using namespace pcl;
 using namespace std;
@@ -24,6 +25,8 @@ public:
 	Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointNormal &_center);
 	Edge(const Edge &_other);
 	~Edge();
+
+	friend ostream &operator<<(ostream &_stream, const Edge &_edge);
 
 	Edge &operator=(const Edge &_other);
 	bool operator<(const Edge &_other) const;
