@@ -38,19 +38,18 @@ public:
 	PointNormal getBallCenter() const;
 	double getPivotingRadius() const;
 
-	inline void linkForward(const EdgePtr &_other)
+private:
+	inline void setId()
 	{
-		next = _other;
-		//_other->next.get() = this;
+		static long currentId = 0;
+		id = currentId++;
 	}
 
-private:
 	vector<PointData> vertices;
 	PointData oppositeVertex;
 	PointNormal ballCenter;
 	PointNormal middlePoint;
 	double pivotingRadius;
 	bool active;
-
-	EdgePtr prev, next;
+	long id;
 };

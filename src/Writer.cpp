@@ -233,7 +233,7 @@ void Writer::generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstrea
 		_output << "0 ";
 	_output << "\n\n";
 
-	float factor = 0.005;
+	float factor = 0.002;
 	_output << "# points coordinates\n";
 	for (size_t i = 0; i < _cloud->size(); i++)
 	{

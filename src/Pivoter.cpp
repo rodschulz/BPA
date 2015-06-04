@@ -26,12 +26,83 @@ bool Pivoter::isUsed(const int _index) const
 
 void Pivoter::setUsed(const int _index)
 {
-	used[_index];
+	used[_index] = true;
 }
 
 pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 {
-	return make_pair(-1, TrianglePtr());
+	PointData v0 = _edge->getVertex(0);
+	PointData v1 = _edge->getVertex(1);
+	Vector3f opposite = _edge->getOppositeVertex().first->getVector3fMap();
+	PointNormal edgeMiddle = _edge->getMiddlePoint();
+	double pivotingRadius = _edge->getPivotingRadius();
+
+	// Create a plane passing for the middle point and perpendicular to the edge
+	Vector3f middle = edgeMiddle.getVector3fMap();
+	Vector3f ballCenter = _edge->getBallCenter().getVector3fMap();
+	Vector3f vertex0 = v0.first->getVector3fMap();
+
+	Vector3f diff1 = 100 * (vertex0 - middle);
+	Vector3f diff2 = 100 * (ballCenter - middle);
+
+	Vector3f y = diff1.cross(diff2).normalized();
+	Vector3f normal = diff2.cross(y).normalized();
+	Hyperplane<float, 3> plane = Hyperplane<float, 3>(normal, middle);
+
+	// Get neighborhood
+	vector<int> indices;
+	vector<float> squaredDistances;
+	kdtree.radiusSearch(edgeMiddle, ballRadius * 2, indices, squaredDistances);
+
+	Vector3f zeroAngle = (opposite - middle).normalized();
+	zeroAngle = plane.projection(zeroAngle).normalized();
+
+	double currentAngle = M_PI;
+	pair<int, TrianglePtr> output = make_pair(-1, TrianglePtr());
+
+	// Iterate over the neighborhood pivoting the ball
+	for (size_t i = 0; i < indices.size(); i++)
+	{
+		// Skip the points already used
+		int index = indices[i];
+		if (used[index])
+			continue;
+
+		Vector3f point = cloud->at(index).getVector3fMap();
+		double distanceToPlane = plane.absDistance(point);
+
+		/**
+		 * If the distance to the plane is less than the ball radius, then intersection between a ball
+		 * centered in the point and the plane exists
+		 */
+		if (distanceToPlane <= ballRadius)
+		{
+			Vector3f circleNormal;
+			pair<Vector3f, double> circle = getCircumscribedCircle(v0.second, v1.second, index, circleNormal);
+			Vector3f center;
+			if (getBallCenter(circle, circleNormal, center))
+			{
+				Vector3f projectedCenter = plane.projection(center);
+				double cosAngle = zeroAngle.dot(projectedCenter.normalized());
+				if (fabs(cosAngle) > 1)
+					cosAngle = sign<double>(cosAngle);
+				double angle = acos(cosAngle);
+
+				// TODO check if the ball is empty??
+
+				// TODO fix point selection according to the angle
+				if (output.first == -1 || currentAngle > angle)
+				{
+					currentAngle = angle;
+					output = make_pair(index, TrianglePtr(new Triangle(v0.first, v1.first, &cloud->points[index], v0.second, v1.second, index, center, ballRadius)));
+				}
+
+			}
+		}
+	}
+
+	// Extract result
+	return output;
 }
 
 TrianglePtr Pivoter::findSeed()

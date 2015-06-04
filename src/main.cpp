@@ -19,6 +19,12 @@ using namespace pcl;
 
 int main(int _argn, char **_argv)
 {
+	// TODO check if the seed selection is selecting correctly a ball which is above the surface according to the normals
+	// TODO check if the pivoting method is selecting correctly the next point according to the angle
+	// TODO fix the pivoting method to take into account points that can't be added because the face normal is downwards
+	//
+
+
 	system("rm -rf ./output/*");
 
 	if (_argn < 2)
@@ -77,53 +83,6 @@ int main(int _argn, char **_argv)
 
 		Writer::writeMesh("mesh", cloud, mesh, true);
 	}
-
-	////////////////////////////////
-
-//	DataHolder holder(cloud);
-//	Ball ball = Ball(holder, ballRadius);
-//	Front front;
-//
-//	// Create the mesh
-//	while (true)
-//	{
-//		Edge *edge;
-//		while (front.getActiveEdge(&edge))
-//		{
-//			pair<int, Triangle> pivotData = ball.pivot(edge);
-//			if (pivotData.first != -1 && (!holder.used[pivotData.first] || front.inFront(pivotData.first)))
-//			{
-//				holder.used[pivotData.first] = true;
-//				outputMesh.push_back(pivotData.second);
-//
-//				// TODO join and glue operations must set edges as active/disabled
-//				//front.join(edge, &cloud->at(pivotData.first), pivotData);
-////				join(edge, p, front);
-////				if (inFront(Edge(edge.getPoint(0), p), front))
-////					glue();
-////				if (inFront(Edge(edge.getPoint(1), p), front))
-////					glue();
-//
-//				Writer::writeMesh("mesh", cloud, outputMesh, true);
-//			}
-//			else
-//			{
-//				// Mark edge as boundary
-//				edge->setActive(false);
-//			}
-//		}
-//
-//		Triangle seed;
-//		if (ball.findSeedTriangle(seed))
-//		{
-//			outputMesh.push_back(seed);
-//			front.addEdges(seed);
-//		}
-//		else
-//			break;
-//
-//		Writer::writeMesh("mesh", cloud, outputMesh, true);
-//	}
 
 	cout << "Writing output mesh\n";
 	Writer::writeMesh("mesh", cloud, mesh);

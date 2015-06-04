@@ -29,7 +29,7 @@ PointCloud<Normal>::Ptr Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_clo
 	PointCloud<Normal>::Ptr normals(new PointCloud<Normal>());
 
 	search::KdTree<PointXYZ>::Ptr kdtree(new search::KdTree<PointXYZ>);
-	NormalEstimationOMP<PointXYZ, Normal> normalEstimation;
+	NormalEstimation<PointXYZ, Normal> normalEstimation;
 	normalEstimation.setInputCloud(_cloud);
 
 	if (_searchRadius > 0)

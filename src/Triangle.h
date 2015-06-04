@@ -22,6 +22,7 @@ class Triangle
 public:
 	Triangle();
 	Triangle(const PointNormal &_v0, const PointNormal &_v1, const PointNormal &_v2, const int _index0, const int _index1, const int _index2, const PointNormal &_ballCenter, const double _ballRadius);
+	Triangle(PointNormal *_v0, PointNormal *_v1, PointNormal *_v2, const int _index0, const int _index1, const int _index2, const Vector3f &_ballCenter, const double _ballRadius);
 	Triangle(const Triangle &_other);
 	~Triangle();
 
@@ -43,12 +44,12 @@ public:
 			return -1;
 	}
 
-	inline Edge getEdge(const int _n) const
+	inline EdgePtr getEdge(const int _n) const
 	{
 		int index0 = _n % 3;
 		int index1 = (_n + 1) % 3;
 		int index2 = (_n + 2) % 3;
-		return Edge(vertices[index0], vertices[index1], vertices[index2], ballCenter);
+		return EdgePtr(new Edge(vertices[index0], vertices[index1], vertices[index2], ballCenter));
 	}
 
 	inline PointNormal getBallCenter() const
