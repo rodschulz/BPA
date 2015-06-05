@@ -64,11 +64,13 @@ int main(int _argn, char **_argv)
 				cout << "Adding point " << data.first << " to front\n";
 				mesh.push_back(data.second);
 				front.joinAndFix(data, pivoter);
-				Writer::writeMesh("addedPoint", cloud, mesh, data.second, true);
+				Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second);
 			}
 			else
-				// Mark edge as boundary
+			{
+				cout << "Edge" << data.first << " set as boundary\n";
 				edge->setActive(false);
+			}
 		}
 
 		// Find a new seed

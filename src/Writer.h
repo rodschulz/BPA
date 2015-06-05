@@ -24,7 +24,7 @@ using namespace Eigen;
 class Writer
 {
 public:
-	static void writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential = false);
+	static void writeCircumscribedSphere(const string &_filename, const Vector3f &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const vector<TrianglePtr> &_meshData, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const bool _addSequential = false);
@@ -38,6 +38,7 @@ private:
 	static void generateCloud(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
 	static void generateSphere(const Vector3f &_center, const double _radius, ofstream &_output);
 	static void generateTriangle(const Triangle &_triangle, ofstream &_output);
+	static void generateTriangleFace(const TrianglePtr &_triangle, ofstream &_output);
 	static void generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
 
 	static inline string generateName(const string &_name, const string &_extension, bool _addSequential = false)

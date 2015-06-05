@@ -55,9 +55,9 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 
 	// Iterate over the neighborhood pivoting the ball
 	vector<int> indices = getNeighbors(edgeMiddle, ballRadius * 2);
-	for (size_t i = 0; i < indices.size(); i++)
+	for (size_t t = 0; t < indices.size(); t++)
 	{
-		int index = indices[i];
+		int index = indices[t];
 		if (v0.second == index || v1.second == index || op.second == index || used[index])
 			continue;
 
@@ -74,8 +74,25 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 			{
 				PointNormal ballCenter = Helper::makePointNormal(center);
 				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
-				if (!isEmpty(neighborhood, _edge->getVertex(0).second, _edge->getVertex(1).second, index))
+				if (!isEmpty(neighborhood, v0.second, v1.second, index))
+				{
+					cout << "Discarded for neighbors: " << index << "\n";
+					Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
 					continue;
+				}
+
+				// Check the face is pointing upwards
+				Vector3f Vij = v1.first->getVector3fMap() - v0.first->getVector3fMap();
+				Vector3f Vik = point - v0.first->getVector3fMap();
+				Vector3f faceNormal = Vik.cross(Vij).normalized();
+				if (!Helper::isOriented(faceNormal, (Vector3f) v0.first->getNormalVector3fMap(), (Vector3f) v1.first->getNormalVector3fMap(), (Vector3f) cloud->at(index).getNormalVector3fMap()))
+				{
+					cout << "Discarded for normal: " << index << "\n";
+					vector<TrianglePtr> data;
+					data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
+					Writer::writeMesh("discarded_normal", cloud, data);
+					continue;
+				}
 
 				Vector3f projectedCenter = plane.projection(center);
 				double cosAngle = zeroAngle.dot(projectedCenter.normalized());
@@ -87,7 +104,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				if (output.first == -1 || currentAngle > angle)
 				{
 					currentAngle = angle;
-					output = make_pair(index, TrianglePtr(new Triangle(v0.first, v1.first, &cloud->points[index], v0.second, v1.second, index, center, ballRadius)));
+					output = make_pair(index, TrianglePtr(new Triangle(v0.first, &cloud->points[index], v1.first, v0.second, index, v1.second, center, ballRadius)));
 				}
 
 			}

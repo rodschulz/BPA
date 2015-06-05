@@ -14,7 +14,7 @@ Writer::~Writer()
 {
 }
 
-void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential)
+void Writer::writeCircumscribedSphere(const string &_filename, const Vector3f &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential)
 {
 	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
 
@@ -29,8 +29,7 @@ void Writer::writeCircumscribedSphere(const string &_filename, const PointXYZ &_
 	output << "}\n\n";
 
 	output << "{ ";
-	Vector3f center = _center.getVector3fMap();
-	generateSphere(center, _radius, output);
+	generateSphere(_center, _radius, output);
 	output << "}\n\n";
 
 	output << "{ ";
@@ -107,6 +106,10 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateNormals(_cloud, output);
 	output << "}\n\n";
 
+	output << "{ ";
+	generateTriangleFace(_seed, output);
+	output << "}\n\n";
+
 	output << "}\n";
 	output.close();
 }
@@ -158,8 +161,8 @@ void Writer::generateMesh(const vector<TrianglePtr> &_meshData, ofstream &_outpu
 	_output.precision(PRECISION);
 	_output << fixed;
 
-	// Extract points and triangle data
 	vector<vector<int> > sides;
+	vector<PointNormal *> pointArray;
 	map<PointNormal *, int> pointMap;
 	int counter = 0;
 	for (size_t k = 0; k < _meshData.size(); k++)
@@ -169,9 +172,12 @@ void Writer::generateMesh(const vector<TrianglePtr> &_meshData, ofstream &_outpu
 
 		for (int i = 0; i < 3; i++)
 		{
-			PointNormal * p = t->getVertex(i).first;
+			PointNormal *p = t->getVertex(i).first;
 			if (pointMap.find(p) == pointMap.end())
-				pointMap[p] = counter++;
+			{
+				pointMap[p] = pointArray.size();
+				pointArray.push_back(p);
+			}
 
 			sides.back().push_back(pointMap[p]);
 		}
@@ -185,8 +191,8 @@ void Writer::generateMesh(const vector<TrianglePtr> &_meshData, ofstream &_outpu
 	_output << points << " " << faces << " " << points << "\n";
 
 	_output << "# x, y, z\n";
-	for (map<PointNormal *, int>::iterator it = pointMap.begin(); it != pointMap.end(); it++)
-		_output << it->first->x << " " << it->first->y << " " << it->first->z << "\n";
+	for (size_t i = 0; i < pointArray.size(); i++)
+		_output << pointArray[i]->x << " " << pointArray[i]->y << " " << pointArray[i]->z << "\n";
 
 	_output << "# polygon faces\n";
 	for (size_t k = 0; k < sides.size(); k++)
@@ -213,6 +219,70 @@ void Writer::generateTriangle(const Triangle &_triangle, ofstream &_output)
 		_output << p->x << " " << p->y << " " << p->z << "\n";
 	}
 	_output << "\n3 0 1 2\n";
+}
+
+void Writer::generateTriangleFace(const TrianglePtr &_triangle, ofstream &_output)
+{
+	_output.precision(PRECISION);
+	_output << fixed;
+
+	// Draw faces edges
+	_output << "{\n";
+
+	_output << "appearance { linewidth 2 } VECT\n\n";
+	_output << "# num of lines, num of vertices, num of colors\n";
+	_output << "3 6 3\n\n";
+
+	_output << "# num of vertices in each line\n";
+	_output << "2 2 2\n\n";
+
+	_output << "# num of colors for each line\n";
+	_output << "1 1 1\n\n";
+
+	_output << "# points coordinates\n";
+	for (size_t i = 0; i < 3; i++)
+	{
+		PointData point = _triangle->getVertex(i);
+		_output << point.first->x << " " << point.first->y << " " << point.first->z << "\n";
+		point = _triangle->getVertex((i + 1) % 3);
+		_output << point.first->x << " " << point.first->y << " " << point.first->z << "\n";
+	}
+	_output << "\n";
+
+	_output << "# Color for vertices in RGBA\n";
+	_output << "1 0 1 1\n"; // Magenta
+	_output << "0 1 0 1\n"; // Green
+	_output << "0 1 1 1\n"; // Cyan
+
+	_output << "}\n";
+
+	// Draw face's vertices
+//	_output << "{\n";
+//
+//	_output << "appearance { linewidth 4 } VECT\n\n";
+//	_output << "# num of lines, num of vertices, num of colors\n";
+//	_output << "3 3 3\n\n";
+//
+//	_output << "# num of vertices in each line\n";
+//	_output << "1 1 1\n\n";
+//
+//	_output << "# num of colors for each line\n";
+//	_output << "1 1 1\n\n";
+//
+//	_output << "# points coordinates\n";
+//	for (size_t i = 0; i < 3; i++)
+//	{
+//		PointData point = _triangle->getVertex(i);
+//		_output << point.first->x << " " << point.first->y << " " << point.first->z << "\n";
+//	}
+//	_output << "\n";
+//
+//	_output << "# Color for vertices in RGBA\n";
+//	_output << "1 0 1 1\n"; // Magenta
+//	_output << "0 1 0 1\n"; // Green
+//	_output << "0 1 1 1\n"; // Cyan
+//
+//	_output << "}\n";
 }
 
 void Writer::generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output)

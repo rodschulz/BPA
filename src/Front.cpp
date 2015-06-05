@@ -64,13 +64,13 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 		 */
 
 		// Add new edges
+		EdgePtr edge0 = _data.second->getEdge(0);
 		EdgePtr edge1 = _data.second->getEdge(1);
-		EdgePtr edge2 = _data.second->getEdge(2);
+		front.insert(pos, edge0);
 		front.insert(pos, edge1);
-		front.insert(pos, edge2);
 
+		cout << "\tEdge added: " << *edge0 << "\n";
 		cout << "\tEdge added: " << *edge1 << "\n";
-		cout << "\tEdge added: " << *edge2 << "\n";
 
 		// Remove replaced edge
 		cout << "\tEdge removed: " << **pos << "\n";
