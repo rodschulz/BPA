@@ -47,6 +47,7 @@ void Front::addEdges(const TrianglePtr &_triangle)
 	for (int i = 0; i < 3; i++)
 	{
 		front.push_back(_triangle->getEdge(i));
+		cout << "\tEdge added: " << *front.back() << "\n";
 
 		PointData data = front.back()->getVertex(0);
 		frontPoints[data.first] = data.second;
@@ -85,6 +86,7 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 	}
 	else
 	{
+		cout << "*** Glue operation not implemented yet!\n";
 	}
 }
 

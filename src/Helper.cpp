@@ -64,16 +64,14 @@ bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal
 	return status;
 }
 
-int Helper::getActiveEdge(vector<Edge> &_front)
+bool Helper::isOriented(const Vector3f &_normal, const Vector3f &_normal0, const Vector3f &_normal1, const Vector3f &_normal2)
 {
-	for (size_t i = 0; i < _front.size(); i++)
-	{
-		if (_front[i].isActive())
-		{
-			return i;
-		}
-	}
-	return -1;
+	int count = 0;
+	count = _normal0.dot(_normal) < 0 ? count + 1 : count;
+	count = _normal1.dot(_normal) < 0 ? count + 1 : count;
+	count = _normal2.dot(_normal) < 0 ? count + 1 : count;
+
+	return count <= 1;
 }
 
 PointNormal Helper::makePointNormal(const float _x, const float _y, const float _z, const float _nx, const float _ny, const float _nz, const float _curvature)

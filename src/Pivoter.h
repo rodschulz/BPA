@@ -29,7 +29,7 @@ public:
 	void setUsed(const int _index);
 
 private:
-	pair<Vector3f, double> getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal) const;
+	pair<Vector3f, double> getCircumscribedCircle(const Vector3f &_p0, const Vector3f &_p1, const Vector3f &_p2) const;
 	bool getBallCenter(const int _index0, const int _index1, const int _index2, Vector3f &_center) const;
 
 	bool isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2) const;

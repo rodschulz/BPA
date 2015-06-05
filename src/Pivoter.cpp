@@ -47,11 +47,6 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 	Vector3f normal = diff2.cross(y).normalized();
 	Hyperplane<float, 3> plane = Hyperplane<float, 3>(normal, middle);
 
-	// Get neighborhood
-	vector<int> indices;
-	vector<float> squaredDistances;
-	kdtree.radiusSearch(edgeMiddle, ballRadius * 2, indices, squaredDistances);
-
 	Vector3f zeroAngle = ((Vector3f) (op.first->getVector3fMap() - middle)).normalized();
 	zeroAngle = plane.projection(zeroAngle).normalized();
 
@@ -59,6 +54,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 	pair<int, TrianglePtr> output = make_pair(-1, TrianglePtr());
 
 	// Iterate over the neighborhood pivoting the ball
+	vector<int> indices = getNeighbors(edgeMiddle, ballRadius * 2);
 	for (size_t i = 0; i < indices.size(); i++)
 	{
 		int index = indices[i];
@@ -136,9 +132,6 @@ TrianglePtr Pivoter::findSeed()
 				{
 					PointNormal ballCenter = Helper::makePointNormal(center);
 					vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
-
-					//Writer::writeMesh("seedTesting", cloud, vector<TrianglePtr>(), TrianglePtr(new Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2, ballCenter, ballRadius)), true);
-
 					if (isEmpty(neighborhood, index0, index1, index2))
 					{
 						cout << "\tSeed found (" << index0 << ", " << index1 << ", " << index2 << ")\n";
@@ -155,35 +148,14 @@ TrianglePtr Pivoter::findSeed()
 	return seed;
 }
 
-pair<Vector3f, double> Pivoter::getCircumscribedCircle(const int _index0, const int _index1, const int _index2, Vector3f &_normal) const
+pair<Vector3f, double> Pivoter::getCircumscribedCircle(const Vector3f &_p0, const Vector3f &_p1, const Vector3f &_p2) const
 {
-	Vector3f p0 = cloud->at(_index0).getVector3fMap();
-	Vector3f p1 = cloud->at(_index1).getVector3fMap();
-	Vector3f p2 = cloud->at(_index2).getVector3fMap();
-
-	// Find a normal to the plane holding the 3 points
-	Vector3f d10 = p1 - p0;
-	Vector3f d20 = p2 - p0;
-	_normal = d10.cross(d20);
-
-	// The three points are aligned
-	if (_normal.norm() < 0.001 * d10.norm() * d20.norm())
-		return make_pair(Vector3f(0, 0, 0), -1);
-
-	_normal.normalize();
-
-	// Check the normal is pointing outwards
-	int count = 0;
-	count = cloud->at(_index0).getNormalVector3fMap().dot(_normal) < 0 ? count + 1 : count;
-	count = cloud->at(_index1).getNormalVector3fMap().dot(_normal) < 0 ? count + 1 : count;
-	count = cloud->at(_index2).getNormalVector3fMap().dot(_normal) < 0 ? count + 1 : count;
-	if (count >= 2)
-		_normal *= -1;
-
-	Vector3f d01 = p0 - p1;
-	Vector3f d12 = p1 - p2;
-	Vector3f d21 = p2 - p1;
-	Vector3f d02 = p0 - p2;
+	Vector3f d10 = _p1 - _p0;
+	Vector3f d20 = _p2 - _p0;
+	Vector3f d01 = _p0 - _p1;
+	Vector3f d12 = _p1 - _p2;
+	Vector3f d21 = _p2 - _p1;
+	Vector3f d02 = _p0 - _p2;
 
 	double norm01 = d01.norm();
 	double norm12 = d12.norm();
@@ -195,7 +167,7 @@ pair<Vector3f, double> Pivoter::getCircumscribedCircle(const int _index0, const 
 	double beta = (norm02 * norm02 * d10.dot(d12)) / (2 * norm01C12 * norm01C12);
 	double gamma = (norm01 * norm01 * d20.dot(d21)) / (2 * norm01C12 * norm01C12);
 
-	Vector3f circumscribedCircleCenter = alpha * p0 + beta * p1 + gamma * p2;
+	Vector3f circumscribedCircleCenter = alpha * _p0 + beta * _p1 + gamma * _p2;
 	double circumscribedCircleRadius = (norm01 * norm12 * norm02) / (2 * norm01C12);
 
 	return make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
@@ -205,10 +177,38 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 {
 	bool status = false;
 
-	Vector3f normal;
-	pair<Vector3f, double> circle = getCircumscribedCircle(_index0, _index1, _index2, normal);
-	if (circle.second > 0)
+	Vector3i _sequence;
+
+	Vector3f p0 = cloud->at(_index0).getVector3fMap();
+	Vector3f p1 = cloud->at(_index1).getVector3fMap();
+	Vector3f p2 = cloud->at(_index2).getVector3fMap();
+	_sequence = Vector3i(_index0, _index1, _index2);
+
+	Vector3f v10 = p1 - p0;
+	Vector3f v20 = p2 - p0;
+	Vector3f normal = v10.cross(v20);
+
+	// Calculate ball center only if points are not collinear
+	if (normal.norm() > COMPARISON_EPSILON)
 	{
+		// Normalize to avoid precision errors while checking the orientation
+		normal.normalize();
+		if (!Helper::isOriented(normal, (Vector3f) cloud->at(_index0).getNormalVector3fMap(), (Vector3f) cloud->at(_index1).getNormalVector3fMap(), (Vector3f) cloud->at(_index2).getNormalVector3fMap()))
+		{
+			// Wrong orientation, swap vertices to get a CCW oriented triangle so face's normal pointing upwards
+			p0 = cloud->at(_index1).getVector3fMap();
+			p1 = cloud->at(_index0).getVector3fMap();
+			_sequence = Vector3i(_index1, _index0, _index2);
+
+			v10 = p1 - p0;
+			v20 = p2 - p0;
+			normal = v10.cross(v20);
+			normal.normalize();
+		}
+
+		cout << "\tGetting circle for: (" << _sequence[0] << ", " << _sequence[1] << ", " << _sequence[2] << ")\n";
+
+		pair<Vector3f, double> circle = getCircumscribedCircle(p0, p1, p2);
 		double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;
 		if (squaredDistance > 0)
 		{
