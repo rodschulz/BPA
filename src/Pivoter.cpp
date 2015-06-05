@@ -69,7 +69,8 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 		if (plane.absDistance(point) <= ballRadius)
 		{
 			Vector3f center;
-			if (getBallCenter(v0.second, v1.second, index, center))
+			Vector3i sequence;
+			if (getBallCenter(v0.second, v1.second, index, center, sequence))
 			{
 				PointNormal ballCenter = Helper::makePointNormal(center);
 				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
@@ -128,15 +129,16 @@ TrianglePtr Pivoter::findSeed()
 				cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
 
 				Vector3f center;
-				if (getBallCenter(index0, index1, index2, center))
+				Vector3i sequence;
+				if (getBallCenter(index0, index1, index2, center, sequence))
 				{
 					PointNormal ballCenter = Helper::makePointNormal(center);
 					vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 					if (isEmpty(neighborhood, index0, index1, index2))
 					{
-						cout << "\tSeed found (" << index0 << ", " << index1 << ", " << index2 << ")\n";
+						cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
 
-						seed = TrianglePtr(new Triangle(cloud->at(index0), cloud->at(index1), cloud->at(index2), index0, index1, index2, ballCenter, ballRadius));
+						seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
 						used[index0] = used[index1] = used[index2] = true;
 						return seed;
 					}
@@ -173,11 +175,9 @@ pair<Vector3f, double> Pivoter::getCircumscribedCircle(const Vector3f &_p0, cons
 	return make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
 }
 
-bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _index2, Vector3f &_center) const
+bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _index2, Vector3f &_center, Vector3i &_sequence) const
 {
 	bool status = false;
-
-	Vector3i _sequence;
 
 	Vector3f p0 = cloud->at(_index0).getVector3fMap();
 	Vector3f p1 = cloud->at(_index1).getVector3fMap();

@@ -46,12 +46,11 @@ void Front::addEdges(const TrianglePtr &_triangle)
 {
 	for (int i = 0; i < 3; i++)
 	{
+		// Since triangles were created in the correct sequence, then edges should be correctly oriented
 		front.push_back(_triangle->getEdge(i));
 		cout << "\tEdge added: " << *front.back() << "\n";
 
 		PointData data = front.back()->getVertex(0);
-		frontPoints[data.first] = data.second;
-		data = front.back()->getVertex(1);
 		frontPoints[data.first] = data.second;
 	}
 }
@@ -79,7 +78,6 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 
 		// Move iterator to the first added new edge
 		advance(pos, -2);
-		//pos--;
 
 		// Finally mark the point as used
 		_pivoter.setUsed(_data.first);

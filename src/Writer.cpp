@@ -177,6 +177,8 @@ void Writer::generateMesh(const vector<TrianglePtr> &_meshData, ofstream &_outpu
 		}
 	}
 
+	_output << "appearance { +face +edge }\n";
+
 	_output << "OFF\n# num of points, num of faces, num of edges\n";
 	int points = pointMap.size();
 	int faces = _meshData.size();
