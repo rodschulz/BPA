@@ -19,10 +19,7 @@ using namespace pcl;
 
 int main(int _argn, char **_argv)
 {
-	// TODO check if the seed selection is selecting correctly a ball which is above the surface according to the normals
 	// TODO check if the pivoting method is selecting correctly the next point according to the angle
-	// TODO fix the pivoting method to take into account points that can't be added because the face normal is downwards
-	//
 
 	system("rm -rf ./output/*");
 

@@ -58,7 +58,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 	for (size_t t = 0; t < indices.size(); t++)
 	{
 		int index = indices[t];
-		if (v0.second == index || v1.second == index || op.second == index || used[index])
+		if (v0.second == index || v1.second == index || op.second == index)
 			continue;
 
 		/**
@@ -76,7 +76,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 				if (!isEmpty(neighborhood, v0.second, v1.second, index))
 				{
-					cout << "Discarded for neighbors: " << index << "\n";
+					cout << "\tDiscarded for neighbors: " << index << "\n";
 					Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
 					continue;
 				}
@@ -87,7 +87,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				Vector3f faceNormal = Vik.cross(Vij).normalized();
 				if (!Helper::isOriented(faceNormal, (Vector3f) v0.first->getNormalVector3fMap(), (Vector3f) v1.first->getNormalVector3fMap(), (Vector3f) cloud->at(index).getNormalVector3fMap()))
 				{
-					cout << "Discarded for normal: " << index << "\n";
+					cout << "\tDiscarded for normal: " << index << "\n";
 					vector<TrianglePtr> data;
 					data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
 					Writer::writeMesh("discarded_normal", cloud, data);
@@ -103,6 +103,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				// TODO fix point selection according to the angle
 				if (output.first == -1 || currentAngle > angle)
 				{
+					cout << "\tPoint selected: " << index << "\n";
 					currentAngle = angle;
 					output = make_pair(index, TrianglePtr(new Triangle(v0.first, &cloud->points[index], v1.first, v0.second, index, v1.second, center, ballRadius)));
 				}
