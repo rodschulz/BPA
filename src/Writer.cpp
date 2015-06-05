@@ -114,6 +114,36 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	output.close();
 }
 
+void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const bool _addSequential)
+{
+	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+
+	ofstream output;
+	output.open(name.c_str(), fstream::out);
+
+	// Write header
+	output << "appearance { -face +edge }\n{ LIST\n\n";
+
+	output << "{ ";
+	generateMesh(_meshData, output);
+	output << "}\n\n";
+
+	output << "{ ";
+	generateCloud(_cloud, output);
+	output << "}\n\n";
+
+	output << "{ ";
+	generateNormals(_cloud, output);
+	output << "}\n\n";
+
+	output << "{ ";
+	generateEdge(_boundary, output);
+	output << "}\n\n";
+
+	output << "}\n";
+	output.close();
+}
+
 void Writer::writeTriangle(const string &_filename, const Triangle &_triangle)
 {
 	string name = generateName(_filename, POLYGON_EXTENSION);
@@ -316,4 +346,31 @@ void Writer::generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstrea
 
 	_output << "# Color for vertices in RGBA\n";
 	_output << "0 0 1 1\n";
+}
+
+void Writer::generateEdge(const EdgePtr &_boundary, ofstream &_output)
+{
+	_output.precision(PRECISION);
+	_output << fixed;
+
+	// Write header
+	_output << "appearance { linewidth 2 } VECT\n\n";
+	_output << "# num of lines, num of vertices, num of colors\n";
+	_output << "1 2 1\n\n";
+
+	_output << "# num of vertices in each line\n";
+	_output << "2\n\n";
+
+	_output << "# num of colors for each line\n";
+	_output << "1\n\n";
+
+	_output << "# points coordinates\n";
+	PointNormal *vertex = _boundary->getVertex(0).first;
+	_output << vertex->x << " " << vertex->y << " " << vertex->z << "\n";
+	vertex = _boundary->getVertex(1).first;
+	_output << vertex->x << " " << vertex->y << " " << vertex->z << "\n";
+	_output << "\n";
+
+	_output << "# Color for vertices in RGBA\n";
+	_output << "1 1 0 1\n";
 }

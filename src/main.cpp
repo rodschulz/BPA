@@ -13,6 +13,7 @@
 #include "Writer.h"
 #include "Pivoter.h"
 #include "Front.h"
+#include "Config.h"
 
 using namespace std;
 using namespace pcl;
@@ -30,7 +31,9 @@ int main(int _argn, char **_argv)
 	}
 
 	string inputFile = _argv[1];
-	double ballRadius = 0.002;
+
+	Config::load("./config/config");
+	double ballRadius = Config::getBallRadius();
 
 	cout << "Loading file " << inputFile << "\n";
 
@@ -67,6 +70,7 @@ int main(int _argn, char **_argv)
 			{
 				cout << "Edge marked as boundary" << *edge << "\n";
 				edge->setActive(false);
+				Writer::writeMesh("boundary_" + SSTR(data.first), cloud, mesh, edge);
 			}
 		}
 
@@ -80,8 +84,6 @@ int main(int _argn, char **_argv)
 		}
 		else
 			break;
-
-		Writer::writeMesh("mesh", cloud, mesh, true);
 	}
 
 	cout << "Writing output mesh\n";

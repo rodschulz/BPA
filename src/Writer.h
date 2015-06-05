@@ -28,6 +28,7 @@ public:
 	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const vector<TrianglePtr> &_meshData, const bool _addSequential = false);
 	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const bool _addSequential = false);
+	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const bool _addSequential = false);
 	static void writeTriangle(const string &_filename, const Triangle &_triangle);
 
 private:
@@ -40,6 +41,7 @@ private:
 	static void generateTriangle(const Triangle &_triangle, ofstream &_output);
 	static void generateTriangleFace(const TrianglePtr &_triangle, ofstream &_output);
 	static void generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
+	static void generateEdge(const EdgePtr &_boundary, ofstream &_output);
 
 	static inline string generateName(const string &_name, const string &_extension, bool _addSequential = false)
 	{

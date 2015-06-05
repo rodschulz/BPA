@@ -76,7 +76,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 				if (!isEmpty(neighborhood, v0.second, v1.second, index))
 				{
-					cout << "\tDiscarded for neighbors: " << index << "\n";
+					//cout << "\tDiscarded for neighbors: " << index << "\n";
 					Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
 					continue;
 				}
@@ -87,7 +87,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				Vector3f faceNormal = Vik.cross(Vij).normalized();
 				if (!Helper::isOriented(faceNormal, (Vector3f) v0.first->getNormalVector3fMap(), (Vector3f) v1.first->getNormalVector3fMap(), (Vector3f) cloud->at(index).getNormalVector3fMap()))
 				{
-					cout << "\tDiscarded for normal: " << index << "\n";
+					//cout << "\tDiscarded for normal: " << index << "\n";
 					vector<TrianglePtr> data;
 					data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
 					Writer::writeMesh("discarded_normal", cloud, data);
@@ -229,7 +229,7 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 			normal.normalize();
 		}
 
-		cout << "\tGetting circle for: (" << _sequence[0] << ", " << _sequence[1] << ", " << _sequence[2] << ")\n";
+		//cout << "\tGetting circle for: (" << _sequence[0] << ", " << _sequence[1] << ", " << _sequence[2] << ")\n";
 
 		pair<Vector3f, double> circle = getCircumscribedCircle(p0, p1, p2);
 		double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;

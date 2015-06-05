@@ -107,7 +107,7 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 				else
 				{
 					front.insert(pos, edge);
-					added++;
+					added--;
 					cout << "\tEdge added: " << *edge << "\n";
 				}
 			}
@@ -117,11 +117,14 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 			front.erase(pos);
 
 			// Move iterator to the first added new edge
-			advance(pos, -added);
+			if (added > 0)
+				advance(pos, added);
+			else
+				pos = front.begin();
 
 			// Delete point from the front
 			frontPoints.erase(point);
-			cout << "Point removed from front: " << _data.first << "\n";
+			cout << "\tPoint removed from front: " << _data.first << "\n";
 		}
 		else
 		{
