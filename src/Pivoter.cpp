@@ -168,6 +168,11 @@ TrianglePtr Pivoter::findSeed()
 	return seed;
 }
 
+PointNormal *Pivoter::getPoint(const int _index) const
+{
+	return &cloud->at(_index);
+}
+
 pair<Vector3f, double> Pivoter::getCircumscribedCircle(const Vector3f &_p0, const Vector3f &_p1, const Vector3f &_p2) const
 {
 	Vector3f d10 = _p1 - _p0;

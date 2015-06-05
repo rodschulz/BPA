@@ -24,6 +24,7 @@ public:
 
 	pair<int, TrianglePtr> pivot(const EdgePtr &_edge);
 	TrianglePtr findSeed();
+	PointNormal *getPoint(const int _index) const;
 
 	bool isUsed(const int _index) const;
 	void setUsed(const int _index);

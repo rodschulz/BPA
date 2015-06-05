@@ -62,15 +62,17 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 		/**
 		 * This is the easy case, the new point has not been used
 		 */
-
 		// Add new edges
-		EdgePtr edge0 = _data.second->getEdge(0);
-		EdgePtr edge1 = _data.second->getEdge(1);
-		front.insert(pos, edge0);
-		front.insert(pos, edge1);
+		for (int i = 0; i < 2; i++)
+		{
+			EdgePtr edge = _data.second->getEdge(i);
+			front.insert(pos, edge);
+			cout << "\tEdge added: " << *edge << "\n";
+		}
 
-		cout << "\tEdge added: " << *edge0 << "\n";
-		cout << "\tEdge added: " << *edge1 << "\n";
+		// Add new point to the 'in front' map
+		PointData data = _data.second->getVertex(1);
+		frontPoints[data.first] = data.second;
 
 		// Remove replaced edge
 		cout << "\tEdge removed: " << **pos << "\n";
@@ -84,11 +86,72 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 	}
 	else
 	{
-		cout << "*** Glue operation not implemented yet!\n";
+		PointNormal *point = _pivoter.getPoint(_data.first);
+		if (inFront(point))
+		{
+			/**
+			 * Point in front, so orientation must be check, and join and glue must be done
+			 */
+			int added = 0;
+
+			for (int i = 0; i < 2; i++)
+			{
+				EdgePtr edge = _data.second->getEdge(i);
+				list<EdgePtr>::iterator it;
+				if ((it = isPresent(edge)) != front.end())
+				{
+					// Remove the 'coincident' edge
+					cout << "\tEdge removed: " << **it << "\n";
+					front.erase(it);
+				}
+				else
+				{
+					front.insert(pos, edge);
+					added++;
+					cout << "\tEdge added: " << *edge << "\n";
+				}
+			}
+
+			// Remove the old edge
+			cout << "\tEdge removed: " << **pos << "\n";
+			front.erase(pos);
+
+			// Move iterator to the first added new edge
+			advance(pos, -added);
+
+			// Delete point from the front
+			frontPoints.erase(point);
+			cout << "Point removed from front: " << _data.first << "\n";
+		}
+		else
+		{
+			/**
+			 * The point is not part of any front edge, hence is an internal
+			 * point, so this edge can't be done. In consequence this a boundary
+			 */
+			(*pos)->setActive(false);
+			cout << "Edge marked as boundary: " << **pos << "\n";
+		}
 	}
 }
 
 bool Front::inFront(PointNormal *_point)
 {
 	return frontPoints.find(_point) != frontPoints.end();
+}
+
+list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
+{
+	int vertex0 = _edge->getVertex(0).second;
+	int vertex1 = _edge->getVertex(1).second;
+
+	for (list<EdgePtr>::iterator it = front.begin(); it != front.end(); it++)
+	{
+		int v0 = (*it)->getVertex(0).second;
+		int v1 = (*it)->getVertex(1).second;
+		if ((v0 == vertex1 && v1 == vertex0) || (v0 == vertex0 && v1 == vertex1))
+			return it;
+	}
+
+	return front.end();
 }

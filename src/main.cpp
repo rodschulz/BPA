@@ -65,7 +65,7 @@ int main(int _argn, char **_argv)
 			}
 			else
 			{
-				cout << "Edge" << data.first << " set as boundary\n";
+				cout << "Edge marked as boundary" << *edge << "\n";
 				edge->setActive(false);
 			}
 		}

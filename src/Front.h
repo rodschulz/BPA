@@ -23,6 +23,8 @@ public:
 	bool inFront(PointNormal *_point);
 
 private:
+	list<EdgePtr>::iterator isPresent(const EdgePtr &_edge);
+
 	list<EdgePtr> front;
 	list<EdgePtr>::iterator pos;
 	map<PointNormal *, int> frontPoints;
