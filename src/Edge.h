@@ -41,6 +41,14 @@ public:
 	PointNormal getBallCenter() const;
 	double getPivotingRadius() const;
 
+	inline string toString() const
+	{
+		char str[10];
+		sprintf(str, "%d-%d", vertices[0].second, vertices[1].second);
+		string s = str;
+		return s;
+	}
+
 private:
 	inline void setId()
 	{

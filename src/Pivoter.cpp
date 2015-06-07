@@ -76,6 +76,10 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 				if (!isEmpty(neighborhood, v0.second, v1.second, index))
 				{
+//					double dist0 = (v0.first->getVector3fMap() - center).norm();
+//					double dist1 = (v0.first->getVector3fMap() - center).norm();
+//					double dist2 = (v0.first->getVector3fMap() - center).norm();
+
 					//cout << "\tDiscarded for neighbors: " << index << "\n";
 					Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
 					continue;

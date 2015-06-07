@@ -6,7 +6,6 @@
 
 Front::Front()
 {
-	front.clear();
 	pos = front.begin();
 }
 
@@ -50,6 +49,9 @@ void Front::addEdges(const TrianglePtr &_triangle)
 		front.push_back(_triangle->getEdge(i));
 		cout << "\tEdge added: " << *front.back() << "\n";
 
+//		PointData data = front.back()->getVertex(0);
+//		addPoint(data, front.back());
+
 		PointData data = front.back()->getVertex(0);
 		frontPoints[data.first] = data.second;
 	}
@@ -59,10 +61,11 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 {
 	if (!_pivoter.isUsed(_data.first))
 	{
+		cout << "Point not used\n";
+
 		/**
 		 * This is the easy case, the new point has not been used
 		 */
-		// Add new edges
 		for (int i = 0; i < 2; i++)
 		{
 			EdgePtr edge = _data.second->getEdge(i);
@@ -72,7 +75,9 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 
 		// Add new point to the 'in front' map
 		PointData data = _data.second->getVertex(1);
-		frontPoints[data.first] = data.second;
+
+		//PointData data = _data.second->getVertex(1);
+		//frontPoints[data.first] = data.second;
 
 		// Remove replaced edge
 		cout << "\tEdge removed: " << **pos << "\n";
@@ -86,6 +91,8 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 	}
 	else
 	{
+		cout << "Point already used\n";
+
 		PointNormal *point = _pivoter.getPoint(_data.first);
 		if (inFront(point))
 		{
@@ -93,7 +100,6 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 			 * Point in front, so orientation must be check, and join and glue must be done
 			 */
 			int added = 0;
-
 			for (int i = 0; i < 2; i++)
 			{
 				EdgePtr edge = _data.second->getEdge(i);
@@ -112,19 +118,25 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 				}
 			}
 
-			// Remove the old edge
+			// Remove pivoting edge
 			cout << "\tEdge removed: " << **pos << "\n";
 			front.erase(pos);
 
 			// Move iterator to the first added new edge
-			if (added > 0)
+			if (added < 0)
 				advance(pos, added);
 			else
 				pos = front.begin();
 
-			// Delete point from the front
-			frontPoints.erase(point);
-			cout << "\tPoint removed from front: " << _data.first << "\n";
+			// Attempt to remove the inner point from the front
+			PointData innerPoint = _data.second->getEdge(0)->getVertex(0);
+			if (remove(innerPoint.first))
+				cout << "\tPoint removed from front: " << innerPoint.second << "\n";
+
+			// If both edges where removed, then an inner point is created and it has to be removed from the front
+			innerPoint = _data.second->getEdge(0)->getVertex(1);
+			if (remove(innerPoint.first))
+				cout << "\tPoint removed from front: " << innerPoint.second << "\n";
 		}
 		else
 		{
@@ -157,4 +169,22 @@ list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 	}
 
 	return front.end();
+}
+
+bool Front::remove(PointNormal *_point)
+{
+	// Check if there's an edge using the point
+	for (list<EdgePtr>::iterator it = front.begin(); it != front.end(); it++)
+	{
+		if (!(*it)->isActive())
+			continue;
+
+		if ((*it)->getVertex(0).first == _point || (*it)->getVertex(1).first == _point)
+			return false;
+	}
+
+	// No edges using the point, so has to be deleted
+	frontPoints.erase(_point);
+
+	return true;
 }

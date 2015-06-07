@@ -52,6 +52,10 @@ int main(int _argn, char **_argv)
 	cout << "Beginning mesh construction using ball r=" << ballRadius << "\n";
 	while (true)
 	{
+		//revisar el caso de la insersion del edge 26-11
+		//revisar los casos que se están aborando en el join and fix
+
+
 		// Pivot from the current front
 		EdgePtr edge;
 		while ((edge = front.getActiveEdge()) != NULL)
@@ -64,13 +68,13 @@ int main(int _argn, char **_argv)
 				cout << "Adding point " << data.first << " to front\n";
 				mesh.push_back(data.second);
 				front.joinAndFix(data, pivoter);
-				Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second);
+				Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second, true);
 			}
 			else
 			{
 				cout << "Edge marked as boundary" << *edge << "\n";
 				edge->setActive(false);
-				Writer::writeMesh("boundary_" + SSTR(data.first), cloud, mesh, edge);
+				Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, true);
 			}
 		}
 

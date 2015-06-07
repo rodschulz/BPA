@@ -8,6 +8,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 #include "Triangle.h"
 
 using namespace std;
@@ -18,8 +20,7 @@ using namespace Eigen;
 #define SPHERE_EXTENSION	".sph"
 #define POLYGON_EXTENSION	".off"
 
-#define SSTR(x)			dynamic_cast< std::ostringstream & >( \
-				( std::ostringstream() << std::dec << x ) ).str()
+#define SSTR(x)			dynamic_cast< std::stringstream &>((std::stringstream() << std::dec << std::setfill('0') << std::setw(3) << x)).str()
 
 class Writer
 {
@@ -47,12 +48,12 @@ private:
 	{
 		static int sequential = 0;
 
-		string name = OUTPUT_FOLDER + _name;
+		string name = OUTPUT_FOLDER;
 		if (_addSequential)
 		{
-			name += "_" + SSTR(sequential++);
+			name += SSTR(sequential++)+ "_";
 		}
-		name += _extension;
+		name += _name + _extension;
 
 		return name;
 	}

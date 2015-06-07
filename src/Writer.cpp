@@ -93,10 +93,10 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateMesh(_meshData, output);
 	output << "}\n\n";
 
-	output << "{ ";
-	Vector3f center = _seed->getBallCenter().getVector3fMap();
-	generateSphere(center, _seed->getBallRadius(), output);
-	output << "}\n\n";
+//	output << "{ ";
+//	Vector3f center = _seed->getBallCenter().getVector3fMap();
+//	generateSphere(center, _seed->getBallRadius(), output);
+//	output << "}\n\n";
 
 	output << "{ ";
 	generateCloud(_cloud, output);
