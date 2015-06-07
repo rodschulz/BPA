@@ -20,21 +20,16 @@ public:
 	EdgePtr getActiveEdge();
 	void addEdges(const TrianglePtr &_triangle);
 	void joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter);
-	bool inFront(PointNormal *_point);
+	bool inFront(const int _index);
+	void setInactive(EdgePtr &_edge);
 
 private:
 	list<EdgePtr>::iterator isPresent(const EdgePtr &_edge);
-	bool remove(PointNormal *_point);
-
-//	inline void addPoint(PointData &_point, EdgePtr &_edge)
-//	{
-//		if (points.find(_point.first) == points.end())
-//			points[_point.first] = vector<EdgePtr>();
-//		points[_point.first].push_back(_edge);
-//	}
+	void addEdgePoints(EdgePtr &_edge);
+	void removeEdgePoints(EdgePtr &_edge);
 
 	list<EdgePtr> front;
 	list<EdgePtr>::iterator pos;
-//	map<PointNormal *, vector<EdgePtr>> points;
-	map<PointNormal *, int> frontPoints;
+	map<int, map<EdgePtr, bool> > points;
+
 };

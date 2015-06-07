@@ -52,10 +52,6 @@ int main(int _argn, char **_argv)
 	cout << "Beginning mesh construction using ball r=" << ballRadius << "\n";
 	while (true)
 	{
-		//revisar el caso de la insersion del edge 26-11
-		//revisar los casos que se están aborando en el join and fix
-
-
 		// Pivot from the current front
 		EdgePtr edge;
 		while ((edge = front.getActiveEdge()) != NULL)
@@ -63,7 +59,7 @@ int main(int _argn, char **_argv)
 			cout << "Testing edge " << *edge << "\n";
 
 			pair<int, TrianglePtr> data = pivoter.pivot(edge);
-			if (data.first != -1 && (!pivoter.isUsed(data.first) || front.inFront(&cloud->points[data.first])))
+			if (data.first != -1 && (!pivoter.isUsed(data.first) || front.inFront(data.first)))
 			{
 				cout << "Adding point " << data.first << " to front\n";
 				mesh.push_back(data.second);
@@ -73,7 +69,7 @@ int main(int _argn, char **_argv)
 			else
 			{
 				cout << "Edge marked as boundary" << *edge << "\n";
-				edge->setActive(false);
+				front.setInactive(edge);
 				Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, true);
 			}
 		}

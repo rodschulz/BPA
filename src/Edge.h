@@ -62,5 +62,7 @@ private:
 	PointNormal middlePoint;
 	double pivotingRadius;
 	bool active;
+
 	long id;
+	string str;
 };
