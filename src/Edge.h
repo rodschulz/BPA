@@ -33,20 +33,47 @@ public:
 	bool operator==(const Edge &_other) const;
 	bool operator!=(const Edge &_other) const;
 
-	void setActive(const bool _active);
-	bool isActive() const;
-	PointData getVertex(const int _point) const;
-	PointData getOppositeVertex() const;
-	PointNormal getMiddlePoint() const;
-	PointNormal getBallCenter() const;
-	double getPivotingRadius() const;
+	inline void setActive(const bool _active)
+	{
+		active = _active;
+	}
+
+	inline bool isActive() const
+	{
+		return active;
+	}
+
+	inline PointData getVertex(const int _n) const
+	{
+		if (_n < 2)
+			return vertices[_n];
+		else
+			return make_pair<PointNormal *, int>(NULL, -1);
+	}
+
+	inline PointData getOppositeVertex() const
+	{
+		return oppositeVertex;
+	}
+
+	inline PointNormal getMiddlePoint() const
+	{
+		return middlePoint;
+	}
+
+	inline PointNormal getBallCenter() const
+	{
+		return ballCenter;
+	}
+
+	inline double getPivotingRadius() const
+	{
+		return pivotingRadius;
+	}
 
 	inline string toString() const
 	{
-		char str[10];
-		sprintf(str, "%d-%d", vertices[0].second, vertices[1].second);
-		string s = str;
-		return s;
+		return dynamic_cast<std::stringstream &>((std::stringstream() << std::dec << vertices[0].second << "-" << vertices[1].second)).str();
 	}
 
 private:
