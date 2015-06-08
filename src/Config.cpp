@@ -10,6 +10,7 @@
 #include <iterator>
 #include <math.h>
 #include <vector>
+#include <boost/algorithm/string.hpp>
 
 Config::Config()
 {
@@ -49,11 +50,14 @@ void Config::parse(const string _key, const string _value)
 		getInstance()->radius = atof(_value.c_str());
 	else if (_key.compare("debug") == 0)
 	{
-		int level = atoi(_value.c_str());
-		if (0 < level && level < 4)
-			level = 0;
-
-		getInstance()->level = (DebugLevel) level;
+		if (boost::iequals(_value, "low"))
+			getInstance()->level = LOW;
+		else if (boost::iequals(_value, "medium"))
+			getInstance()->level = MEDIUM;
+		else if (boost::iequals(_value, "high"))
+			getInstance()->level = HIGH;
+		else
+			getInstance()->level = LOW;
 	}
 }
 

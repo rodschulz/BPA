@@ -3,6 +3,7 @@
  * 2015
  */
 #include "Front.h"
+#include "Config.h"
 
 Front::Front()
 {
@@ -43,18 +44,22 @@ EdgePtr Front::getActiveEdge()
 
 void Front::addEdges(const TrianglePtr &_triangle)
 {
+	DebugLevel debug = Config::getDebugLevel();
 	for (int i = 0; i < 3; i++)
 	{
 		// Since triangles were created in the correct sequence, then edges should be correctly oriented
 		front.push_back(_triangle->getEdge(i));
 		addEdgePoints(front.back());
 
-		cout << "\tEdge added: " << *front.back() << "\n";
+		if (debug >= MEDIUM)
+			cout << "\tEdge added: " << *front.back() << "\n";
 	}
 }
 
 void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 {
+	DebugLevel debug = Config::getDebugLevel();
+
 	if (!_pivoter.isUsed(_data.first))
 	{
 		/**
@@ -67,11 +72,14 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 			front.insert(pos, edge);
 			addEdgePoints(edge);
 
-			cout << "\tEdge added: " << *edge << "\n";
+			if (debug >= MEDIUM)
+				cout << "\tEdge added: " << *edge << "\n";
 		}
 
 		// Remove replaced edge
-		cout << "\tEdge removed: " << **pos << "\n";
+		if (debug >= MEDIUM)
+			cout << "\tEdge removed: " << **pos << "\n";
+
 		front.erase(pos);
 		removeEdgePoints(*pos);
 
@@ -96,7 +104,9 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 				if ((it = isPresent(edge)) != front.end())
 				{
 					// Remove the 'coincident' edge
-					cout << "\tEdge removed: " << **it << "\n";
+					if (debug >= MEDIUM)
+						cout << "\tEdge removed: " << **it << "\n";
+
 					removeEdgePoints(*it);
 					front.erase(it);
 				}
@@ -105,12 +115,16 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 					front.insert(pos, edge);
 					addEdgePoints(edge);
 					added--;
-					cout << "\tEdge added: " << *edge << "\n";
+
+					if (debug >= MEDIUM)
+						cout << "\tEdge added: " << *edge << "\n";
 				}
 			}
 
 			// Remove pivoting edge
-			cout << "\tEdge removed: " << **pos << "\n";
+			if (debug >= MEDIUM)
+				cout << "\tEdge removed: " << **pos << "\n";
+
 			front.erase(pos);
 			removeEdgePoints(*pos);
 
@@ -127,9 +141,9 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 			 * The point is not part of any front edge, hence is an internal
 			 * point, so this edge can't be done. In consequence this a boundary
 			 */
-			//(*pos)->setActive(false);
 			setInactive(*pos);
-			cout << "Edge marked as boundary: " << **pos << "\n";
+			if (debug >= LOW)
+				cout << "Edge marked as boundary: " << **pos << "\n";
 		}
 	}
 }

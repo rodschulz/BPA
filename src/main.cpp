@@ -34,6 +34,7 @@ int main(int _argn, char **_argv)
 
 	Config::load("./config/config");
 	double ballRadius = Config::getBallRadius();
+	DebugLevel debug = Config::getDebugLevel();
 
 	cout << "Loading file " << inputFile << "\n";
 
@@ -49,7 +50,9 @@ int main(int _argn, char **_argv)
 	Front front;
 	vector<TrianglePtr> mesh;
 
-	cout << "Beginning mesh construction using ball r=" << ballRadius << "\n";
+	int k = 0;
+
+	cout << "Building mesh with ball r=" << ballRadius << "\n";
 	while (true)
 	{
 		// Pivot from the current front
@@ -61,17 +64,26 @@ int main(int _argn, char **_argv)
 			pair<int, TrianglePtr> data = pivoter.pivot(edge);
 			if (data.first != -1 && (!pivoter.isUsed(data.first) || front.inFront(data.first)))
 			{
-				cout << "Adding point " << data.first << " to front\n";
+				if (debug >= LOW)
+					cout << "Adding point " << data.first << " to front\n";
+
 				mesh.push_back(data.second);
 				front.joinAndFix(data, pivoter);
-				Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second, true);
+
+				if (debug >= LOW)
+					Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second, true);
 			}
 			else
 			{
-				cout << "Edge marked as boundary" << *edge << "\n";
 				front.setInactive(edge);
-				Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, true);
+
+				if (debug >= LOW)
+					cout << "Edge marked as boundary" << *edge << "\n";
+				if (debug >= MEDIUM)
+					Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, true);
 			}
+
+			k++;
 		}
 
 		// Find a new seed
@@ -80,7 +92,9 @@ int main(int _argn, char **_argv)
 		{
 			mesh.push_back(seed);
 			front.addEdges(seed);
-			Writer::writeMesh("seed", cloud, mesh, seed, true);
+
+			if (debug >= LOW)
+				Writer::writeMesh("seed", cloud, mesh, seed, true);
 		}
 		else
 			break;

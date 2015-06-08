@@ -4,6 +4,7 @@
  */
 #include "Pivoter.h"
 #include "Writer.h"
+#include "Config.h"
 
 Pivoter::Pivoter(const PointCloud<PointNormal>::Ptr &_cloud, const double _ballRadius)
 {
@@ -31,6 +32,8 @@ void Pivoter::setUsed(const int _index)
 
 pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 {
+	DebugLevel debug = Config::getDebugLevel();
+
 	PointData v0 = _edge->getVertex(0);
 	PointData v1 = _edge->getVertex(1);
 	PointData op = _edge->getOppositeVertex();
@@ -74,14 +77,13 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 			{
 				PointNormal ballCenter = Helper::makePointNormal(center);
 				vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
-				if (!isEmpty(neighborhood, v0.second, v1.second, index))
+				if (!isEmpty(neighborhood, v0.second, v1.second, index, center))
 				{
-//					double dist0 = (v0.first->getVector3fMap() - center).norm();
-//					double dist1 = (v0.first->getVector3fMap() - center).norm();
-//					double dist2 = (v0.first->getVector3fMap() - center).norm();
-
-					//cout << "\tDiscarded for neighbors: " << index << "\n";
-					Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
+					if (debug >= HIGH)
+					{
+						cout << "\tDiscarded for neighbors: " << index << "\n";
+						Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
+					}
 					continue;
 				}
 
@@ -91,10 +93,14 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				Vector3f faceNormal = Vik.cross(Vij).normalized();
 				if (!Helper::isOriented(faceNormal, (Vector3f) v0.first->getNormalVector3fMap(), (Vector3f) v1.first->getNormalVector3fMap(), (Vector3f) cloud->at(index).getNormalVector3fMap()))
 				{
-					//cout << "\tDiscarded for normal: " << index << "\n";
-					vector<TrianglePtr> data;
-					data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
-					Writer::writeMesh("discarded_normal", cloud, data);
+					if (debug >= HIGH)
+					{
+						cout << "\tDiscarded for normal: " << index << "\n";
+						vector<TrianglePtr> data;
+						data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
+						Writer::writeMesh("discarded_normal", cloud, data);
+					}
+
 					continue;
 				}
 
@@ -107,7 +113,9 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				// TODO fix point selection according to the angle
 				if (output.first == -1 || currentAngle > angle)
 				{
-					cout << "\tPoint selected: " << index << "\n";
+					if (debug >= LOW)
+						cout << "\tPoint selected: " << index << "\n";
+
 					currentAngle = angle;
 					output = make_pair(index, TrianglePtr(new Triangle(v0.first, &cloud->points[index], v1.first, v0.second, index, v1.second, center, ballRadius)));
 				}
@@ -116,13 +124,14 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 		}
 	}
 
-	// Extract result
 	return output;
 }
 
 TrianglePtr Pivoter::findSeed()
 {
 	// TODO this could be faster by storing only indices of points actually unused
+
+	DebugLevel debug = Config::getDebugLevel();
 
 	TrianglePtr seed;
 	for (size_t index0 = 0; index0 < cloud->size(); index0++)
@@ -148,7 +157,8 @@ TrianglePtr Pivoter::findSeed()
 				if (index1 == index2 || index2 == index0 || used[index2])
 					continue;
 
-				cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
+				if (debug >= MEDIUM)
+					cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
 
 				Vector3f center;
 				Vector3i sequence;
@@ -156,7 +166,7 @@ TrianglePtr Pivoter::findSeed()
 				{
 					PointNormal ballCenter = Helper::makePointNormal(center);
 					vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
-					if (isEmpty(neighborhood, index0, index1, index2))
+					if (isEmpty(neighborhood, index0, index1, index2, center))
 					{
 						cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
 
@@ -233,8 +243,6 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 			normal.normalize();
 		}
 
-		//cout << "\tGetting circle for: (" << _sequence[0] << ", " << _sequence[1] << ", " << _sequence[2] << ")\n";
-
 		pair<Vector3f, double> circle = getCircumscribedCircle(p0, p1, p2);
 		double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;
 		if (squaredDistance > 0)
@@ -247,10 +255,10 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 	return status;
 }
 
-bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2) const
+bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2, const Vector3f &_ballCenter) const
 {
-	if (_data.size() > 3)
-		return false;
+//	if (_data.size() > 3)
+//		return false;
 	if (_data.empty())
 		return true;
 
@@ -258,8 +266,12 @@ bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _in
 	{
 		if (_data[i] == _index0 || _data[i] == _index1 || _data[i] == _index2)
 			continue;
-		else
-			return false;
+
+		Vector3f dist = cloud->at(_data[i]).getVector3fMap() - _ballCenter;
+		if (fabs(dist.norm() - ballRadius) < 1e-8)
+			continue;
+
+		return false;
 	}
 
 	return true;

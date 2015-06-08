@@ -1,2 +1,2 @@
-ballRadius 0.002
-debug low
+ballRadius 1
+debug medium
