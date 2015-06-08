@@ -64,6 +64,9 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 		if (v0.second == index || v1.second == index || op.second == index)
 			continue;
 
+		if (debug >= MEDIUM)
+			cout << "Testing " << index << "\n";
+
 		/**
 		 * If the distance to the plane is less than the ball radius, then intersection between a ball
 		 * centered in the point and the plane exists
@@ -82,7 +85,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 					if (debug >= HIGH)
 					{
 						cout << "\tDiscarded for neighbors: " << index << "\n";
-						Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud);
+						Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud, true);
 					}
 					continue;
 				}
@@ -98,7 +101,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 						cout << "\tDiscarded for normal: " << index << "\n";
 						vector<TrianglePtr> data;
 						data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
-						Writer::writeMesh("discarded_normal", cloud, data);
+						Writer::writeMesh("discarded_normal", cloud, data, true);
 					}
 
 					continue;
@@ -121,6 +124,16 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				}
 
 			}
+			else
+			{
+				if (debug >= MEDIUM)
+					cout << "Can't find ball for " << index << "\n";
+			}
+		}
+		else
+		{
+			if (debug >= MEDIUM)
+				cout << "No intersection for " << index << "\n";
 		}
 	}
 
@@ -268,7 +281,7 @@ bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _in
 			continue;
 
 		Vector3f dist = cloud->at(_data[i]).getVector3fMap() - _ballCenter;
-		if (fabs(dist.norm() - ballRadius) < 1e-8)
+		if (fabs(dist.norm() - ballRadius) < 1e-7)
 			continue;
 
 		return false;

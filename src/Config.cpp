@@ -57,7 +57,7 @@ void Config::parse(const string _key, const string _value)
 		else if (boost::iequals(_value, "high"))
 			getInstance()->level = HIGH;
 		else
-			getInstance()->level = LOW;
+			getInstance()->level = NONE;
 	}
 }
 
