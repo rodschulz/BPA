@@ -20,7 +20,7 @@ using namespace Eigen;
 #define SPHERE_EXTENSION	".sph"
 #define POLYGON_EXTENSION	".off"
 
-#define SSTR(x)			dynamic_cast< std::stringstream &>((std::stringstream() << std::dec << std::setfill('0') << std::setw(3) << x)).str()
+#define SSTR(x)			dynamic_cast< std::stringstream &>((std::stringstream() << std::dec << std::setfill('0') << std::setw(5) << x)).str()
 
 class Writer
 {

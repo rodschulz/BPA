@@ -24,10 +24,21 @@ public:
 
 	pair<int, TrianglePtr> pivot(const EdgePtr &_edge);
 	TrianglePtr findSeed();
-	PointNormal *getPoint(const int _index) const;
 
-	bool isUsed(const int _index) const;
-	void setUsed(const int _index);
+	inline PointNormal *getPoint(const int _index) const
+	{
+		return &cloud->at(_index);
+	}
+
+	inline bool isUsed(const int _index) const
+	{
+		return used[_index];
+	}
+
+	inline void setUsed(const int _index)
+	{
+		used[_index] = true;
+	}
 
 private:
 	pair<Vector3f, double> getCircumscribedCircle(const Vector3f &_p0, const Vector3f &_p1, const Vector3f &_p2) const;

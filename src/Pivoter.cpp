@@ -6,6 +6,8 @@
 #include "Writer.h"
 #include "Config.h"
 
+#define IN_BALL_THRESHOLD	1e-7
+
 Pivoter::Pivoter(const PointCloud<PointNormal>::Ptr &_cloud, const double _ballRadius)
 {
 	cloud = _cloud;
@@ -18,16 +20,6 @@ Pivoter::Pivoter(const PointCloud<PointNormal>::Ptr &_cloud, const double _ballR
 
 Pivoter::~Pivoter()
 {
-}
-
-bool Pivoter::isUsed(const int _index) const
-{
-	return used[_index];
-}
-
-void Pivoter::setUsed(const int _index)
-{
-	used[_index] = true;
 }
 
 pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
@@ -195,11 +187,6 @@ TrianglePtr Pivoter::findSeed()
 	return seed;
 }
 
-PointNormal *Pivoter::getPoint(const int _index) const
-{
-	return &cloud->at(_index);
-}
-
 pair<Vector3f, double> Pivoter::getCircumscribedCircle(const Vector3f &_p0, const Vector3f &_p1, const Vector3f &_p2) const
 {
 	Vector3f d10 = _p1 - _p0;
@@ -272,6 +259,7 @@ bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _in
 {
 //	if (_data.size() > 3)
 //		return false;
+	// TODO make this a little faster by making the query to the cloud here and using the distances already given by the query
 	if (_data.empty())
 		return true;
 
@@ -281,7 +269,7 @@ bool Pivoter::isEmpty(const vector<int> &_data, const int _index0, const int _in
 			continue;
 
 		Vector3f dist = cloud->at(_data[i]).getVector3fMap() - _ballCenter;
-		if (fabs(dist.norm() - ballRadius) < 1e-7)
+		if (fabs(dist.norm() - ballRadius) < IN_BALL_THRESHOLD)
 			continue;
 
 		return false;

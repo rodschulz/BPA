@@ -49,7 +49,7 @@ void Front::addEdges(const TrianglePtr &_triangle)
 	{
 		// Since triangles were created in the correct sequence, then edges should be correctly oriented
 		front.push_back(_triangle->getEdge(i));
-		addEdgePoints(front.back());
+		addEdgePoints(--front.end());
 
 		if (debug >= MEDIUM)
 			cout << "\tEdge added: " << *front.back() << "\n";
@@ -69,8 +69,8 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 		for (int i = 0; i < 2; i++)
 		{
 			EdgePtr edge = _data.second->getEdge(i);
-			front.insert(pos, edge);
-			addEdgePoints(edge);
+			list<EdgePtr>::iterator insertionPlace = front.insert(pos, edge);
+			addEdgePoints(insertionPlace);
 
 			if (debug >= MEDIUM)
 				cout << "\tEdge added: " << *edge << "\n";
@@ -112,8 +112,8 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 				}
 				else
 				{
-					front.insert(pos, edge);
-					addEdgePoints(edge);
+					list<EdgePtr>::iterator insertionPlace = front.insert(pos, edge);
+					addEdgePoints(insertionPlace);
 					added--;
 
 					if (debug >= MEDIUM)
@@ -148,11 +148,6 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 	}
 }
 
-bool Front::inFront(const int _index)
-{
-	return points.find(_index) != points.end();
-}
-
 void Front::setInactive(EdgePtr &_edge)
 {
 	_edge->setActive(false);
@@ -172,29 +167,52 @@ void Front::setInactive(EdgePtr &_edge)
 
 list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 {
+//	int vertex0 = _edge->getVertex(0).second;
+//	int vertex1 = _edge->getVertex(1).second;
+//
+//	for (list<EdgePtr>::iterator it = front.begin(); it != front.end(); it++)
+//	{
+//		int v0 = (*it)->getVertex(0).second;
+//		int v1 = (*it)->getVertex(1).second;
+//		if ((v0 == vertex1 && v1 == vertex0) || (v0 == vertex0 && v1 == vertex1))
+//			return it;
+//	}
+
 	int vertex0 = _edge->getVertex(0).second;
 	int vertex1 = _edge->getVertex(1).second;
 
-	for (list<EdgePtr>::iterator it = front.begin(); it != front.end(); it++)
+	if (points.find(vertex0) == points.end() || points.find(vertex0) == points.end())
+		// Since points aren't both present, the vertex can't be present
+		return front.end();
+	else
 	{
-		int v0 = (*it)->getVertex(0).second;
-		int v1 = (*it)->getVertex(1).second;
-		if ((v0 == vertex1 && v1 == vertex0) || (v0 == vertex0 && v1 == vertex1))
-			return it;
-	}
+		// Look for a coincident edge
+		for (map<EdgePtr, list<EdgePtr>::iterator>::iterator it = points[vertex1].begin(); it != points[vertex1].end(); it++)
+		{
+			int v0 = (*it->second)->getVertex(0).second;
+			int v1 = (*it->second)->getVertex(1).second;
+			if ((v0 == vertex1 && v1 == vertex0) || (v0 == vertex0 && v1 == vertex1))
+				return it->second;
+		}
 
-	return front.end();
+		return front.end();
+
+//		if (points[vertex0].find(_edge) == points[vertex0].end())
+//			return front.end();
+//
+//		return points[vertex0][_edge];
+	}
 }
 
-void Front::addEdgePoints(EdgePtr &_edge)
+void Front::addEdgePoints(list<EdgePtr>::iterator &_edge)
 {
 	for (int i = 0; i < 2; i++)
 	{
-		PointData data = _edge->getVertex(i);
+		PointData data = (*_edge)->getVertex(i);
 		if (points.find(data.second) == points.end())
-			points[data.second] = map<EdgePtr, bool>();
+			points[data.second] = map<EdgePtr, list<EdgePtr>::iterator>();
 
-		points[data.second][_edge] = true;
+		points[data.second][(*_edge)] = _edge;
 	}
 
 }
@@ -212,7 +230,7 @@ void Front::removeEdgePoints(EdgePtr &_edge)
 			if (points[data.second].empty())
 			{
 				points.erase(data.second);
-				cout << "\tPoint removed from front: " << data.second << "\n";
+				//cout << "\tPoint removed from front: " << data.second << "\n";
 			}
 		}
 		else

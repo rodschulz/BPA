@@ -4,10 +4,8 @@
  */
 #include <stdlib.h>
 #include <string>
-#include <pcl/common/common.h>
 #include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/io.h>
+#include <ctime>
 #include "Helper.h"
 #include "Triangle.h"
 #include "Writer.h"
@@ -20,10 +18,8 @@ using namespace pcl;
 
 int main(int _argn, char **_argv)
 {
-	// TODO check if the pivoting method is selecting correctly the next point according to the angle
-
-	system("rm -rf ./output/*");
-
+	if (system("rm -rf ./output/*") != 0)
+		cout << "ERROR: bad command\n";
 	if (_argn < 2)
 	{
 		cout << "Not enough arguments\n";
@@ -37,6 +33,7 @@ int main(int _argn, char **_argv)
 	DebugLevel debug = Config::getDebugLevel();
 
 	cout << "Loading file " << inputFile << "\n";
+	clock_t begin = clock();
 
 	PointCloud<PointNormal>::Ptr cloud(new PointCloud<PointNormal>());
 	if (!Helper::getCloudAndNormals(inputFile, cloud))
@@ -49,8 +46,6 @@ int main(int _argn, char **_argv)
 	Pivoter pivoter(cloud, ballRadius);
 	Front front;
 	vector<TrianglePtr> mesh;
-
-	int k = 0;
 
 	cout << "Building mesh with ball r=" << ballRadius << "\n";
 	while (true)
@@ -82,8 +77,6 @@ int main(int _argn, char **_argv)
 				if (debug >= MEDIUM)
 					Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, true);
 			}
-
-			k++;
 		}
 
 		// Find a new seed
@@ -100,9 +93,12 @@ int main(int _argn, char **_argv)
 			break;
 	}
 
+	clock_t end = clock();
+
 	cout << "Writing output mesh\n";
 	Writer::writeMesh("mesh", cloud, mesh);
 
-	cout << "Finished\n";
+	double elapsedTime = (double) (end - begin) / CLOCKS_PER_SEC;
+	cout << "Finished in " << setprecision(5) << fixed << elapsedTime << " [s]\n";
 	return EXIT_SUCCESS;
 }
