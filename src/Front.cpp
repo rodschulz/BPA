@@ -167,17 +167,6 @@ void Front::setInactive(EdgePtr &_edge)
 
 list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 {
-//	int vertex0 = _edge->getVertex(0).second;
-//	int vertex1 = _edge->getVertex(1).second;
-//
-//	for (list<EdgePtr>::iterator it = front.begin(); it != front.end(); it++)
-//	{
-//		int v0 = (*it)->getVertex(0).second;
-//		int v1 = (*it)->getVertex(1).second;
-//		if ((v0 == vertex1 && v1 == vertex0) || (v0 == vertex0 && v1 == vertex1))
-//			return it;
-//	}
-
 	int vertex0 = _edge->getVertex(0).second;
 	int vertex1 = _edge->getVertex(1).second;
 
@@ -196,11 +185,6 @@ list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 		}
 
 		return front.end();
-
-//		if (points[vertex0].find(_edge) == points[vertex0].end())
-//			return front.end();
-//
-//		return points[vertex0][_edge];
 	}
 }
 

@@ -32,12 +32,12 @@ public:
 
 	inline bool isUsed(const int _index) const
 	{
-		return used[_index];
+		return used.find(_index) == used.end();
 	}
 
 	inline void setUsed(const int _index)
 	{
-		used[_index] = true;
+		used.erase(_index);
 	}
 
 private:
@@ -49,6 +49,6 @@ private:
 
 	KdTreeFLANN<PointNormal> kdtree;
 	PointCloud<PointNormal>::Ptr cloud;
-	vector<bool> used;
+	map<int, bool> used;
 	double ballRadius;
 };

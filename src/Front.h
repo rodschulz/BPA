@@ -34,6 +34,5 @@ private:
 
 	list<EdgePtr> front;
 	list<EdgePtr>::iterator pos;
-	//map<int, map<EdgePtr, bool> > points;
 	map<int, map<EdgePtr, list<EdgePtr>::iterator> > points;
 };

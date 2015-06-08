@@ -14,8 +14,8 @@ Pivoter::Pivoter(const PointCloud<PointNormal>::Ptr &_cloud, const double _ballR
 	ballRadius = _ballRadius;
 	kdtree.setInputCloud(cloud);
 
-	used.clear();
-	used.resize(_cloud->size(), false);
+	for (size_t i = 0; i < _cloud->size(); i++)
+		used[i] = false;
 }
 
 Pivoter::~Pivoter()
@@ -134,15 +134,12 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 
 TrianglePtr Pivoter::findSeed()
 {
-	// TODO this could be faster by storing only indices of points actually unused
-
 	DebugLevel debug = Config::getDebugLevel();
 
 	TrianglePtr seed;
-	for (size_t index0 = 0; index0 < cloud->size(); index0++)
+	for (map<int, bool>::iterator it = used.begin(); it != used.end(); it++)
 	{
-		if (used[index0])
-			continue;
+		int index0 = it->first;
 
 		// Get the point's neighborhood
 		vector<int> indices = getNeighbors(cloud->at(index0), ballRadius * 2);
@@ -153,13 +150,13 @@ TrianglePtr Pivoter::findSeed()
 		for (size_t j = 0; j < indices.size(); j++)
 		{
 			int index1 = indices[j];
-			if (index1 == index0 || used[index1])
+			if (index1 == index0 || used.find(index1) == used.end())
 				continue;
 
 			for (size_t k = 0; k < indices.size(); k++)
 			{
 				int index2 = indices[k];
-				if (index1 == index2 || index2 == index0 || used[index2])
+				if (index1 == index2 || index2 == index0 || used.find(index2) == used.end())
 					continue;
 
 				if (debug >= MEDIUM)
@@ -176,7 +173,9 @@ TrianglePtr Pivoter::findSeed()
 						cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
 
 						seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
-						used[index0] = used[index1] = used[index2] = true;
+						used.erase(index0);
+						used.erase(index1);
+						used.erase(index2);
 						return seed;
 					}
 				}
