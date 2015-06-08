@@ -9,6 +9,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/features/normal_3d_omp.h>
 #include <ctype.h>
+#include <pcl/filters/passthrough.h>
 
 Helper::Helper()
 {
@@ -55,6 +56,29 @@ bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal
 
 		_cloud->clear();
 		concatenateFields(*dataXYZ, *normals, *_cloud);
+
+		// Create the filtering object
+//		PointCloud<PointNormal>::Ptr filtered(new PointCloud<PointNormal>());
+//		pcl::PassThrough<pcl::PointNormal> pass;
+//		pass.setInputCloud(_cloud);
+//		pass.setFilterFieldName("z");
+//		pass.setFilterLimits(0.0, 1e20);
+//		pass.filter(*filtered);
+//
+//		pass.setInputCloud(filtered);
+//		pass.setFilterFieldName("x");
+//		//pass.setFilterLimitsNegative (true);
+//		pass.setFilterLimits(-100, 1);
+//		pass.filter(*filtered);
+//
+//		pass.setInputCloud(filtered);
+//		pass.setFilterFieldName("y");
+//		//pass.setFilterLimitsNegative (true);
+//		pass.setFilterLimits(0.04, 100);
+//		pass.filter(*filtered);
+//
+//		io::savePCDFileASCII("./cloud.pcd", *_cloud);
+//		io::savePCDFileASCII("./filtered.pcd", *filtered);
 
 		status = true;
 	}

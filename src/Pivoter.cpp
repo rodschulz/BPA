@@ -93,7 +93,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 						cout << "\tDiscarded for normal: " << index << "\n";
 						vector<TrianglePtr> data;
 						data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
-						Writer::writeMesh("discarded_normal", cloud, data, true);
+						Writer::writeMesh("discarded_normal", cloud, data, DRAW_CLOUD);
 					}
 
 					continue;
@@ -135,6 +135,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 TrianglePtr Pivoter::findSeed()
 {
 	DebugLevel debug = Config::getDebugLevel();
+	double neighborhoodSize = 1.3;
 
 	TrianglePtr seed;
 	for (map<int, bool>::iterator it = used.begin(); it != used.end(); it++)
@@ -142,7 +143,7 @@ TrianglePtr Pivoter::findSeed()
 		int index0 = it->first;
 
 		// Get the point's neighborhood
-		vector<int> indices = getNeighbors(cloud->at(index0), ballRadius * 2);
+		vector<int> indices = getNeighbors(cloud->at(index0), ballRadius * neighborhoodSize);
 		if (indices.size() < 3)
 			continue;
 
@@ -151,12 +152,14 @@ TrianglePtr Pivoter::findSeed()
 		{
 			int index1 = indices[j];
 			if (index1 == index0 || used.find(index1) == used.end())
+				//if (index1 == index0)
 				continue;
 
 			for (size_t k = 0; k < indices.size(); k++)
 			{
 				int index2 = indices[k];
 				if (index1 == index2 || index2 == index0 || used.find(index2) == used.end())
+					//if (index1 == index2 || index2 == index0)
 					continue;
 
 				if (debug >= MEDIUM)

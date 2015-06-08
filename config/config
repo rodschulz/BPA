@@ -1,2 +1,3 @@
-ballRadius 0.005
-debug none
+ballRadius	0.005
+debug 		low
+drawSpheres	false

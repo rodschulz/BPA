@@ -31,6 +31,7 @@ int main(int _argn, char **_argv)
 	Config::load("./config/config");
 	double ballRadius = Config::getBallRadius();
 	DebugLevel debug = Config::getDebugLevel();
+	int debugMask = ADD_SEQUENTIAL | DRAW_CLOUD | DRAW_NORMALS | (Config::drawSpheres() ? DRAW_SPHERES : 0x00);
 
 	cout << "Loading file " << inputFile << "\n";
 	clock_t begin = clock();
@@ -66,7 +67,7 @@ int main(int _argn, char **_argv)
 				front.joinAndFix(data, pivoter);
 
 				if (debug >= LOW)
-					Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second, true);
+					Writer::writeMesh("addedPoint_" + SSTR(data.first), cloud, mesh, data.second, debugMask);
 			}
 			else
 			{
@@ -75,19 +76,20 @@ int main(int _argn, char **_argv)
 				if (debug >= LOW)
 					cout << "Edge marked as boundary" << *edge << "\n";
 				if (debug >= MEDIUM)
-					Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, true);
+					Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, debugMask);
 			}
 		}
 
 		// Find a new seed
 		TrianglePtr seed;
+		cout << "Searching a seed\n";
 		if ((seed = pivoter.findSeed()) != NULL)
 		{
 			mesh.push_back(seed);
 			front.addEdges(seed);
 
 			if (debug >= LOW)
-				Writer::writeMesh("seed", cloud, mesh, seed, true);
+				Writer::writeMesh("seed", cloud, mesh, seed, debugMask);
 		}
 		else
 			break;

@@ -40,9 +40,13 @@ void Writer::writeCircumscribedSphere(const string &_filename, const Vector3f &_
 	output.close();
 }
 
-void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const bool _addSequential)
+void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const int _mask)
 {
-	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+	bool addSequential = addSequential(_mask);
+	bool drawNormals = drawNormals(_mask);
+	bool drawCloud = drawCloud(_mask);
+
+	string name = generateName(_filename, POLYGON_EXTENSION, addSequential);
 
 	ofstream output;
 	output.open(name.c_str(), fstream::out);
@@ -54,34 +58,32 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateMesh(_meshData, output);
 	output << "}\n\n";
 
-	output << "{ ";
-	generateCloud(_cloud, output);
-	output << "}\n\n";
+	if (drawCloud)
+	{
+		output << "{ ";
+		generateCloud(_cloud, output);
+		output << "}\n\n";
+	}
 
-	output << "{ ";
-	generateNormals(_cloud, output);
-	output << "}\n\n";
+	if (drawNormals)
+	{
+		output << "{ ";
+		generateNormals(_cloud, output);
+		output << "}\n\n";
+	}
 
 	output << "}\n";
 	output.close();
 }
 
-void Writer::writeMesh(const string &_filename, const vector<TrianglePtr> &_meshData, const bool _addSequential)
+void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const int _mask)
 {
-	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+	bool addSequential = addSequential(_mask);
+	bool drawNormals = drawNormals(_mask);
+	bool drawCloud = drawCloud(_mask);
+	bool drawSpheres = drawSphere(_mask);
 
-	ofstream output;
-	output.open(name.c_str(), fstream::out);
-
-	output << fixed;
-	generateMesh(_meshData, output);
-
-	output.close();
-}
-
-void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const bool _addSequential)
-{
-	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+	string name = generateName(_filename, POLYGON_EXTENSION, addSequential);
 
 	ofstream output;
 	output.open(name.c_str(), fstream::out);
@@ -93,18 +95,27 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateMesh(_meshData, output);
 	output << "}\n\n";
 
-//	output << "{ ";
-//	Vector3f center = _seed->getBallCenter().getVector3fMap();
-//	generateSphere(center, _seed->getBallRadius(), output);
-//	output << "}\n\n";
+	if (drawSpheres)
+	{
+		output << "{ ";
+		Vector3f center = _seed->getBallCenter().getVector3fMap();
+		generateSphere(center, _seed->getBallRadius(), output);
+		output << "}\n\n";
+	}
 
-	output << "{ ";
-	generateCloud(_cloud, output);
-	output << "}\n\n";
+	if (drawCloud)
+	{
+		output << "{ ";
+		generateCloud(_cloud, output);
+		output << "}\n\n";
+	}
 
-	output << "{ ";
-	generateNormals(_cloud, output);
-	output << "}\n\n";
+	if (drawNormals)
+	{
+		output << "{ ";
+		generateNormals(_cloud, output);
+		output << "}\n\n";
+	}
 
 	output << "{ ";
 	generateTriangleFace(_seed, output);
@@ -114,9 +125,13 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	output.close();
 }
 
-void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const bool _addSequential)
+void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const int _mask)
 {
-	string name = generateName(_filename, POLYGON_EXTENSION, _addSequential);
+	bool addSequential = addSequential(_mask);
+	bool drawNormals = drawNormals(_mask);
+	bool drawCloud = drawCloud(_mask);
+
+	string name = generateName(_filename, POLYGON_EXTENSION, addSequential);
 
 	ofstream output;
 	output.open(name.c_str(), fstream::out);
@@ -128,13 +143,19 @@ void Writer::writeMesh(const string &_filename, const PointCloud<PointNormal>::P
 	generateMesh(_meshData, output);
 	output << "}\n\n";
 
-	output << "{ ";
-	generateCloud(_cloud, output);
-	output << "}\n\n";
+	if (drawCloud)
+	{
+		output << "{ ";
+		generateCloud(_cloud, output);
+		output << "}\n\n";
+	}
 
-	output << "{ ";
-	generateNormals(_cloud, output);
-	output << "}\n\n";
+	if (drawNormals)
+	{
+		output << "{ ";
+		generateNormals(_cloud, output);
+		output << "}\n\n";
+	}
 
 	output << "{ ";
 	generateEdge(_boundary, output);

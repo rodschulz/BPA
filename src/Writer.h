@@ -22,14 +22,26 @@ using namespace Eigen;
 
 #define SSTR(x)			dynamic_cast< std::stringstream &>((std::stringstream() << std::dec << std::setfill('0') << std::setw(5) << x)).str()
 
+enum WriteOptions
+{
+	ADD_SEQUENTIAL		= 0X01,
+	DRAW_NORMALS 		= 0X02,
+	DRAW_CLOUD 		= 0X04,
+	DRAW_SPHERES		= 0x08,
+};
+
+#define addSequential(x)	((ADD_SEQUENTIAL & (x)) == ADD_SEQUENTIAL)
+#define drawNormals(x)		((DRAW_NORMALS & (x)) == DRAW_NORMALS)
+#define drawCloud(x)		((DRAW_CLOUD & (x)) == DRAW_CLOUD)
+#define drawSphere(x)		((DRAW_SPHERES & (x)) == DRAW_SPHERES)
+
 class Writer
 {
 public:
 	static void writeCircumscribedSphere(const string &_filename, const Vector3f &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential = false);
-	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const bool _addSequential = false);
-	static void writeMesh(const string &_filename, const vector<TrianglePtr> &_meshData, const bool _addSequential = false);
-	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const bool _addSequential = false);
-	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const bool _addSequential = false);
+	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const int _mask = 0x00);
+	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const int _mask = 0x00);
+	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const int _mask = 0x00);
 	static void writeTriangle(const string &_filename, const Triangle &_triangle);
 
 private:

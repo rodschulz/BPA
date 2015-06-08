@@ -16,6 +16,7 @@ Config::Config()
 {
 	level = NONE;
 	radius = 0.002;
+	spheres = true;
 }
 
 Config::~Config()
@@ -46,9 +47,9 @@ void Config::load(const string &_filename)
 
 void Config::parse(const string _key, const string _value)
 {
-	if (_key.compare("ballRadius") == 0)
+	if (boost::iequals(_key, "ballRadius"))
 		getInstance()->radius = atof(_value.c_str());
-	else if (_key.compare("debug") == 0)
+	else if (boost::iequals(_key, "debug"))
 	{
 		if (boost::iequals(_value, "low"))
 			getInstance()->level = LOW;
@@ -59,9 +60,18 @@ void Config::parse(const string _key, const string _value)
 		else
 			getInstance()->level = NONE;
 	}
+	else if (boost::iequals(_key, "drawSpheres"))
+	{
+		getInstance()->spheres = boost::iequals(_value, "true");
+	}
 }
 
 double Config::getBallRadius()
 {
 	return getInstance()->radius;
+}
+
+bool Config::drawSpheres()
+{
+	return getInstance()->spheres;
 }

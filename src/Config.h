@@ -33,6 +33,7 @@ public:
 	}
 
 	static double getBallRadius();
+	static bool drawSpheres();
 
 private:
 	Config();
@@ -42,5 +43,6 @@ private:
 
 	DebugLevel level;
 	double radius;
+	bool spheres;
 };
 
