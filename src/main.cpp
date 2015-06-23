@@ -44,6 +44,9 @@ int main(int _argn, char **_argv)
 	}
 	cout << "Loaded " << cloud->size() << " points in cloud\n";
 
+	//cout << "Fixing normals\n";
+	//Helper::fixNormals(cloud);
+
 	Pivoter pivoter(cloud, ballRadius);
 	Front front;
 	vector<TrianglePtr> mesh;
