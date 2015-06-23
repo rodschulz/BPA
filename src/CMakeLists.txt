@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 project(BPA)
 
 find_package(PCL 1.7 REQUIRED)
+find_package(CUDA REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -13,7 +14,8 @@ set(PCL_BUILD_TYPE Release)
 file(GLOB BPA_SRC
     "*.h"
     "*.cpp"
+    "*.cu"
 )
 
-add_executable(BPA ${BPA_SRC})
+cuda_add_executable(BPA ${BPA_SRC})
 target_link_libraries(BPA ${PCL_LIBRARIES})
