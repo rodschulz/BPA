@@ -7,7 +7,10 @@
 #include <ostream>
 #include <iostream>
 
+#define BLOCKS		10
+#define THREADS		512
 #define N	20
+
 #define cudaCheckErrors(msg) \
 	do { \
 		cudaError_t __err = cudaGetLastError(); \
@@ -23,7 +26,13 @@
 struct BallCenter
 {
 	float cx, cy, cz;
-	float radius;
+	int idx1, idx2, idx3;
+
+	__host__ __device__ BallCenter()
+	{
+		cx = cy = cz = 0;
+		idx1 = idx2 = idx3 = 0;
+	}
 };
 
 struct Point
@@ -32,28 +41,46 @@ struct Point
 	float nx, ny, nz, nw;
 	float c;
 	float fill[3];
+
+	__host__ __device__ Point()
+	{
+		x = y = z = w = nx = ny = nz = nw = c = fill[0] = fill[1] = fill[2] = 0;
+	}
+
+	__device__ Point operator-(const Point &_p)
+	{
+		Point result;
+		result.x = x - _p.x;
+		result.y = y - _p.y;
+		result.z = z - _p.z;
+		return result;
+	}
 };
 
 std::ostream &operator<<(std::ostream &_stream, const BallCenter &_center)
 {
-	_stream << "c=(" << _center.cx << ", " << _center.cy << ", " << _center.cz << ") / r=" << _center.radius;
+	_stream << "c=(" << _center.cx << ", " << _center.cy << ", " << _center.cz << ") / (" << _center.idx1 << ", " << _center.idx2 << ", " << _center.idx3 << ")";
 	return _stream;
 }
 
-__global__ void calculateBalls(Point *_points, BallCenter *_balls)
+__global__ void calculateBalls(const Point *_points, BallCenter *_balls, const int _pointNumber)
 {
 	for (int i = 0; i < N; i++)
 	{
-		_balls[i].cx = i;
+		_balls[i].cx = i * i;
 		_balls[i].cy = i;
 		_balls[i].cz = i;
-		_balls[i].radius = _points[i].x;
+		_balls[i].idx1 = _pointNumber;
 	}
 }
 
 void CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
 	size_t cloudSize = _cloud->size();
+
+	size_t pn = sizeof(pcl::PointNormal);
+	size_t bc = sizeof(BallCenter);
+	size_t p = sizeof(Point);
 
 	// Alloc memory on the device and copy cloud data to it
 	Point *devPoints;
@@ -68,7 +95,10 @@ void CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr
 	cudaMalloc((void **) &devBalls, sizeof(BallCenter) * cloudSize * cloudSize * cloudSize);
 	cudaCheckErrors("cudaMalloc 2 failed");
 
-	calculateBalls<<<1, 1>>>(devPoints, devBalls);
+	// Determine the number or threads and blocks to use
+	//...
+
+	calculateBalls<<<1, 1>>>(devPoints, devBalls, cloudSize);
 
 	// Alloc memory on host
 	BallCenter *balls = (BallCenter*) malloc(sizeof(BallCenter) * cloudSize * cloudSize * cloudSize);

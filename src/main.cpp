@@ -12,6 +12,7 @@
 #include "Pivoter.h"
 #include "Front.h"
 #include "Config.h"
+#include "CudaUtil.h"
 
 using namespace std;
 using namespace pcl;
@@ -44,8 +45,18 @@ int main(int _argn, char **_argv)
 	}
 	cout << "Loaded " << cloud->size() << " points in cloud\n";
 
-	//cout << "Fixing normals\n";
-	//Helper::fixNormals(cloud);
+
+
+	/////////////////////////
+	Vector3f v1(7.34, 32.343, 4.0697);
+	Vector3f v2(1.234, 52.34435, 45);
+	Vector3f v3(45.3457, 77.8342, 193.44);
+	CudaUtil::calculateBallCenters(cloud);
+	return EXIT_SUCCESS;
+
+	/////////////////////////
+
+
 
 	Pivoter pivoter(cloud, ballRadius);
 	Front front;
