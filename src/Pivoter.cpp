@@ -152,14 +152,12 @@ TrianglePtr Pivoter::findSeed()
 		{
 			int index1 = indices[j];
 			if (index1 == index0 || used.find(index1) == used.end())
-				//if (index1 == index0)
 				continue;
 
 			for (size_t k = 0; k < indices.size(); k++)
 			{
 				int index2 = indices[k];
 				if (index1 == index2 || index2 == index0 || used.find(index2) == used.end())
-					//if (index1 == index2 || index2 == index0)
 					continue;
 
 				if (debug >= MEDIUM)
