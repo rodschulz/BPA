@@ -12,20 +12,16 @@
 #include "Helper.h"
 #include "Triangle.h"
 
-using namespace pcl;
-using namespace std;
-using namespace Eigen;
-
 class Pivoter
 {
 public:
-	Pivoter(const PointCloud<PointNormal>::Ptr &_cloud, const double _ballRadius);
+	Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const double _ballRadius);
 	~Pivoter();
 
 	pair<int, TrianglePtr> pivot(const EdgePtr &_edge);
 	TrianglePtr findSeed();
 
-	inline PointNormal *getPoint(const int _index) const
+	inline pcl::PointNormal *getPoint(const int _index) const
 	{
 		return &cloud->at(_index);
 	}
@@ -41,14 +37,14 @@ public:
 	}
 
 private:
-	pair<Vector3f, double> getCircumscribedCircle(const Vector3f &_p0, const Vector3f &_p1, const Vector3f &_p2) const;
-	bool getBallCenter(const int _index0, const int _index1, const int _index2, Vector3f &_center, Vector3i &_sequence) const;
+	pair<Eigen::Vector3f, double> getCircumscribedCircle(const Eigen::Vector3f &_p0, const Eigen::Vector3f &_p1, const Eigen::Vector3f &_p2) const;
+	bool getBallCenter(const int _index0, const int _index1, const int _index2, Eigen::Vector3f &_center, Eigen::Vector3i &_sequence) const;
 
-	bool isEmpty(const vector<int> &_data, const int _index0, const int _index1, const int _index2, const Vector3f &_ballCenter) const;
-	vector<int> getNeighbors(const PointNormal &_point, const double _radius) const;
+	bool isEmpty(const std::vector<int> &_data, const int _index0, const int _index1, const int _index2, const Eigen::Vector3f &_ballCenter) const;
+	std::vector<int> getNeighbors(const pcl::PointNormal &_point, const double _radius) const;
 
-	KdTreeFLANN<PointNormal> kdtree;
-	PointCloud<PointNormal>::Ptr cloud;
-	map<int, bool> used;
+	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
+	pcl::PointCloud<pcl::PointNormal>::Ptr cloud;
+	std::map<int, bool> used;
 	double ballRadius;
 };

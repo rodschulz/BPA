@@ -6,9 +6,7 @@
 #include <eigen3/Eigen/src/Core/Matrix.h>
 #include "Helper.h"
 
-using namespace Eigen;
-
-ostream &operator<<(ostream &_stream, const Edge &_edge)
+std::ostream &operator<<(std::ostream &_stream, const Edge &_edge)
 {
 	_stream << "(" << _edge.vertices[0].second << ", " << _edge.vertices[1].second << ")";
 	return _stream;
@@ -17,15 +15,15 @@ ostream &operator<<(ostream &_stream, const Edge &_edge)
 Edge::Edge()
 {
 	vertices.clear();
-	oppositeVertex = make_pair<PointNormal *, int>(NULL, -1);
-	ballCenter = middlePoint = PointNormal();
+	oppositeVertex = make_pair<pcl::PointNormal *, int>(NULL, -1);
+	ballCenter = middlePoint = pcl::PointNormal();
 	pivotingRadius = 0;
 	active = false;
 	setId();
 	str = "";
 }
 
-Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const PointNormal &_ballCenter)
+Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposite, const pcl::PointNormal &_ballCenter)
 {
 	vertices.push_back(_v0);
 	vertices.push_back(_v1);
@@ -34,8 +32,8 @@ Edge::Edge(const PointData &_v0, const PointData &_v1, const PointData &_opposit
 	ballCenter = _ballCenter;
 	middlePoint = Helper::makePointNormal((_v0.first->x + _v1.first->x) * 0.5, (_v0.first->y + _v1.first->y) * 0.5, (_v0.first->z + _v1.first->z) * 0.5);
 
-	Vector3f m = middlePoint.getVector3fMap();
-	Vector3f c = ballCenter.getVector3fMap();
+	Eigen::Vector3f m = middlePoint.getVector3fMap();
+	Eigen::Vector3f c = ballCenter.getVector3fMap();
 	pivotingRadius = (m - c).norm();
 
 	active = true;

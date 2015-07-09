@@ -9,7 +9,7 @@
 
 #define BLOCKS		10
 #define THREADS		512
-#define N		
+#define N		5
 
 #define cudaCheckErrors(msg) \
 	do { \
@@ -74,32 +74,23 @@ __global__ void calculateBalls(const Point *_points, BallCenter *_balls, const i
 	}
 }
 
-
 __global__ void test1(const Point *_points, BallCenter *_balls, const int _pointNumber)
 {
-	_balls[0].cx = blockIdx.x * 100 + i;
+	_balls[blockIdx.x].cx = blockIdx.x;
 }
 
 __global__ void test2(const Point *_points, BallCenter *_balls, const int _pointNumber)
 {
-	_balls[0].cx = threadIdx.x * 100 + i;
+	_balls[threadIdx.x].cy = threadIdx.x;
 }
 
 void CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
 	size_t cloudSize = _cloud->size();
 
-	size_t pn = sizeof(pcl::PointNormal);
-	size_t bc = sizeof(BallCenter);
-	size_t p = sizeof(Point);
-	
-	/** USE NEW INSTEAD OF MALLOC!! or maybe calloc */
-	
 	Point *devPoints;
 	BallCenter *devBalls;
-	BallCenter *balls = (BallCenter*) malloc(sizeof(BallCenter) * cloudSize * cloudSize * cloudSize);
-	
-
+	BallCenter *balls = (BallCenter*) calloc(cloudSize * cloudSize * cloudSize, sizeof(BallCenter));
 
 	// Alloc memory on the device and copy cloud data to it
 	cudaMalloc((void **) &devPoints, sizeof(pcl::PointNormal) * cloudSize);
@@ -115,8 +106,8 @@ void CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr
 	//...
 
 	//calculateBalls<<<1, 1>>>(devPoints, devBalls, cloudSize);
-	test1<<<5,1>>>(devPoints, devBalls, cloudSize);
-	
+	test1<<<5, 1>>>(devPoints, devBalls, cloudSize);
+
 	// Alloc memory on host
 	cudaMemcpy(balls, devBalls, sizeof(BallCenter) * cloudSize * cloudSize * cloudSize, cudaMemcpyDeviceToHost);
 	cudaCheckErrors("cudaMemcpy to host failed");
@@ -124,18 +115,14 @@ void CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr
 	for (int i = 0; i < N; i++)
 		std::cout << balls[i] << std::endl;
 
+	test2<<<1, 5>>>(devPoints, devBalls, cloudSize);
 
-	test2<<<1,5>>>(devPoints, devBalls, cloudSize);
-	
 	// Alloc memory on host
 	cudaMemcpy(balls, devBalls, sizeof(BallCenter) * cloudSize * cloudSize * cloudSize, cudaMemcpyDeviceToHost);
 	cudaCheckErrors("cudaMemcpy to host failed");
 
 	for (int i = 0; i < N; i++)
 		std::cout << balls[i] << std::endl;
-
-
-
 
 	int x = 0;
 }
