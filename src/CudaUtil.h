@@ -11,7 +11,7 @@
 class CudaUtil
 {
 public:
-	static void calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud);
+	static bool calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud);
 
 private:
 	CudaUtil(){}
