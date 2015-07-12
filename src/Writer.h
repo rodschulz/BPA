@@ -12,10 +12,6 @@
 #include <iomanip>
 #include "Triangle.h"
 
-using namespace std;
-using namespace pcl;
-using namespace Eigen;
-
 #define OUTPUT_FOLDER		"./output/"
 #define SPHERE_EXTENSION	".sph"
 #define POLYGON_EXTENSION	".off"
@@ -38,29 +34,29 @@ enum WriteOptions
 class Writer
 {
 public:
-	static void writeCircumscribedSphere(const string &_filename, const Vector3f &_center, const double _radius, const Triangle &_triangle, const PointCloud<PointNormal>::Ptr &_neighborhood, const bool _addSequential = false);
-	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const int _mask = 0x00);
-	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const int _mask = 0x00);
-	static void writeMesh(const string &_filename, const PointCloud<PointNormal>::Ptr &_cloud, const vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const int _mask = 0x00);
-	static void writeTriangle(const string &_filename, const Triangle &_triangle);
+	static void writeCircumscribedSphere(const std::string &_filename, const Eigen::Vector3f &_center, const double _radius, const Triangle &_triangle, const pcl::PointCloud<pcl::PointNormal>::Ptr &_neighborhood, const bool _addSequential = false);
+	static void writeMesh(const std::string &_filename, const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<TrianglePtr> &_meshData, const int _mask = 0x00);
+	static void writeMesh(const std::string &_filename, const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<TrianglePtr> &_meshData, const TrianglePtr &_seed, const int _mask = 0x00);
+	static void writeMesh(const std::string &_filename, const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<TrianglePtr> &_meshData, const EdgePtr &_boundary, const int _mask = 0x00);
+	static void writeTriangle(const std::string &_filename, const Triangle &_triangle);
 
 private:
 	Writer();
 	~Writer();
 
-	static void generateMesh(const vector<TrianglePtr> &_meshData, ofstream &_output);
-	static void generateCloud(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
-	static void generateSphere(const Vector3f &_center, const double _radius, ofstream &_output);
-	static void generateTriangle(const Triangle &_triangle, ofstream &_output);
-	static void generateTriangleFace(const TrianglePtr &_triangle, ofstream &_output);
-	static void generateNormals(const PointCloud<PointNormal>::Ptr &_cloud, ofstream &_output);
-	static void generateEdge(const EdgePtr &_boundary, ofstream &_output);
+	static void generateMesh(const std::vector<TrianglePtr> &_meshData, std::ofstream &_output);
+	static void generateCloud(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, std::ofstream &_output);
+	static void generateSphere(const Eigen::Vector3f &_center, const double _radius, std::ofstream &_output);
+	static void generateTriangle(const Triangle &_triangle, std::ofstream &_output);
+	static void generateTriangleFace(const TrianglePtr &_triangle, std::ofstream &_output);
+	static void generateNormals(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, std::ofstream &_output);
+	static void generateEdge(const EdgePtr &_boundary, std::ofstream &_output);
 
-	static inline string generateName(const string &_name, const string &_extension, bool _addSequential = false)
+	static inline std::string generateName(const std::string &_name, const std::string &_extension, bool _addSequential = false)
 	{
 		static int sequential = 0;
 
-		string name = OUTPUT_FOLDER;
+		std::string name = OUTPUT_FOLDER;
 		if (_addSequential)
 		{
 			name += SSTR(sequential++)+ "_";

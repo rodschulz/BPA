@@ -18,7 +18,7 @@ public:
 	Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const double _ballRadius);
 	~Pivoter();
 
-	pair<int, TrianglePtr> pivot(const EdgePtr &_edge);
+	std::pair<int, TrianglePtr> pivot(const EdgePtr &_edge);
 	TrianglePtr findSeed();
 
 	inline pcl::PointNormal *getPoint(const int _index) const
@@ -37,7 +37,7 @@ public:
 	}
 
 private:
-	pair<Eigen::Vector3f, double> getCircumscribedCircle(const Eigen::Vector3f &_p0, const Eigen::Vector3f &_p1, const Eigen::Vector3f &_p2) const;
+	std::pair<Eigen::Vector3f, double> getCircumscribedCircle(const Eigen::Vector3f &_p0, const Eigen::Vector3f &_p1, const Eigen::Vector3f &_p2) const;
 	bool getBallCenter(const int _index0, const int _index1, const int _index2, Eigen::Vector3f &_center, Eigen::Vector3i &_sequence) const;
 
 	bool isEmpty(const std::vector<int> &_data, const int _index0, const int _index1, const int _index2, const Eigen::Vector3f &_ballCenter) const;

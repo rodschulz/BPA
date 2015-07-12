@@ -14,68 +14,71 @@
 #include "Config.h"
 #include "CudaUtil.h"
 
-using namespace std;
-using namespace pcl;
-
 int main(int _argn, char **_argv)
 {
 	if (system("rm -rf ./output/*") != 0)
-		cout << "ERROR: bad command\n";
+		std::cout << "ERROR: bad command\n";
 	if (_argn < 2)
 	{
-		cout << "Not enough arguments\n";
+		std::cout << "Not enough arguments\n";
 		return EXIT_FAILURE;
 	}
 
-	string inputFile = _argv[1];
+	std::string inputFile = _argv[1];
 
 	Config::load("./config/config");
 	double ballRadius = Config::getBallRadius();
 	DebugLevel debug = Config::getDebugLevel();
 	int debugMask = ADD_SEQUENTIAL | DRAW_CLOUD | DRAW_NORMALS | (Config::drawSpheres() ? DRAW_SPHERES : 0x00);
 
-	cout << "Loading file " << inputFile << "\n";
+	std::cout << "Loading file " << inputFile << "\n";
 	clock_t begin = clock();
 
-	PointCloud<PointNormal>::Ptr cloud(new PointCloud<PointNormal>());
+	pcl::PointCloud<pcl::PointNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointNormal>());
 	if (!Helper::getCloudAndNormals(inputFile, cloud))
 	{
-		cout << "ERROR: loading failed\n";
+		std::cout << "ERROR: loading failed\n";
 		return EXIT_FAILURE;
 	}
-	cout << "Loaded " << cloud->size() << " points in cloud\n";
-
-
+	std::cout << "Loaded " << cloud->size() << " points in cloud\n";
 
 	/////////////////////////
-	Vector3f v1(7.34, 32.343, 4.0697);
-	Vector3f v2(1.234, 52.34435, 45);
-	Vector3f v3(45.3457, 77.8342, 193.44);
-	CudaUtil::calculateBallCenters(cloud);
-	return EXIT_SUCCESS;
+	//CudaUtil::calculateBallCenters(cloud);
+
+//	clock_t begin2 = clock();
+//
+//	int targetIdx = 3;
+//	std::vector<int> idxs;
+//	CudaUtil::radiusSearch(cloud, targetIdx, ballRadius, idxs);
+//
+//	std::vector<int> indices;
+//	std::vector<float> distances;
+//	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
+//	kdtree.setInputCloud(cloud);
+//	kdtree.radiusSearch(cloud->at(targetIdx), ballRadius, indices, distances);
+//
+//	return EXIT_SUCCESS;
 
 	/////////////////////////
-
-
 
 	Pivoter pivoter(cloud, ballRadius);
 	Front front;
-	vector<TrianglePtr> mesh;
+	std::vector<TrianglePtr> mesh;
 
-	cout << "Building mesh with ball r=" << ballRadius << "\n";
+	std::cout << "Building mesh with ball r=" << ballRadius << "\n";
 	while (true)
 	{
 		// Pivot from the current front
 		EdgePtr edge;
 		while ((edge = front.getActiveEdge()) != NULL)
 		{
-			cout << "Testing edge " << *edge << "\n";
+			std::cout << "Testing edge " << *edge << "\n";
 
-			pair<int, TrianglePtr> data = pivoter.pivot(edge);
+			std::pair<int, TrianglePtr> data = pivoter.pivot(edge);
 			if (data.first != -1 && (!pivoter.isUsed(data.first) || front.inFront(data.first)))
 			{
 				if (debug >= LOW)
-					cout << "Adding point " << data.first << " to front\n";
+					std::cout << "Adding point " << data.first << " to front\n";
 
 				mesh.push_back(data.second);
 				front.joinAndFix(data, pivoter);
@@ -88,7 +91,7 @@ int main(int _argn, char **_argv)
 				front.setInactive(edge);
 
 				if (debug >= LOW)
-					cout << "Edge marked as boundary" << *edge << "\n";
+					std::cout << "Edge marked as boundary" << *edge << "\n";
 				if (debug >= MEDIUM)
 					Writer::writeMesh("boundary_" + edge->toString(), cloud, mesh, edge, debugMask);
 			}
@@ -96,7 +99,7 @@ int main(int _argn, char **_argv)
 
 		// Find a new seed
 		TrianglePtr seed;
-		cout << "Searching a seed\n";
+		std::cout << "Searching a seed\n";
 		if ((seed = pivoter.findSeed()) != NULL)
 		{
 			mesh.push_back(seed);
@@ -111,10 +114,10 @@ int main(int _argn, char **_argv)
 
 	clock_t end = clock();
 
-	cout << "Writing output mesh\n";
+	std::cout << "Writing output mesh\n";
 	Writer::writeMesh("mesh", cloud, mesh);
 
 	double elapsedTime = (double) (end - begin) / CLOCKS_PER_SEC;
-	cout << "Finished in " << setprecision(5) << fixed << elapsedTime << " [s]\n";
+	std::cout << "Finished in " << std::setprecision(5) << std::fixed << elapsedTime << " [s]\n";
 	return EXIT_SUCCESS;
 }

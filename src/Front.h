@@ -17,7 +17,7 @@ public:
 
 	EdgePtr getActiveEdge();
 	void addEdges(const TrianglePtr &_triangle);
-	void joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter);
+	void joinAndFix(const std::pair<int, TrianglePtr> &_data, Pivoter &_pivoter);
 	void setInactive(EdgePtr &_edge);
 
 	inline bool inFront(const int _index)
@@ -27,10 +27,10 @@ public:
 
 private:
 	std::list<EdgePtr>::iterator isPresent(const EdgePtr &_edge);
-	void addEdgePoints(list<EdgePtr>::iterator &_edge);
+	void addEdgePoints(std::list<EdgePtr>::iterator &_edge);
 	void removeEdgePoints(EdgePtr &_edge);
 
 	std::list<EdgePtr> front;
 	std::list<EdgePtr>::iterator pos;
-	std::map<int, map<EdgePtr, list<EdgePtr>::iterator> > points;
+	std::map<int, std::map<EdgePtr, std::list<EdgePtr>::iterator> > points;
 };

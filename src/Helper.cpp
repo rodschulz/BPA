@@ -25,12 +25,12 @@ void Helper::removeNANs(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
 	removeNaNFromPointCloud(*_cloud, *_cloud, mapping);
 }
 
-pcl::PointCloud<Normal>::Ptr Helper::getNormals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const double _searchRadius)
+pcl::PointCloud<pcl::Normal>::Ptr Helper::getNormals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const double _searchRadius)
 {
-	pcl::PointCloud<Normal>::Ptr normals(new pcl::PointCloud<Normal>());
+	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>());
 
-	search::KdTree<pcl::PointXYZ>::Ptr kdtree(new search::KdTree<pcl::PointXYZ>);
-	NormalEstimation<pcl::PointXYZ, Normal> normalEstimation;
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr kdtree(new pcl::search::KdTree<pcl::PointXYZ>);
+	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normalEstimation;
 	normalEstimation.setInputCloud(_cloud);
 
 	if (_searchRadius > 0)
@@ -49,10 +49,10 @@ bool Helper::getCloudAndNormals(const std::string &_inputFile, pcl::PointCloud<p
 	bool status = false;
 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr dataXYZ(new pcl::PointCloud<pcl::PointXYZ>());
-	if (io::loadPCDFile<pcl::PointXYZ>(_inputFile, *dataXYZ) == 0)
+	if (pcl::io::loadPCDFile<pcl::PointXYZ>(_inputFile, *dataXYZ) == 0)
 	{
 		Helper::removeNANs(dataXYZ);
-		pcl::PointCloud<Normal>::Ptr normals = Helper::getNormals(dataXYZ, _estimationRadius);
+		pcl::PointCloud<pcl::Normal>::Ptr normals = Helper::getNormals(dataXYZ, _estimationRadius);
 
 		_cloud->clear();
 		concatenateFields(*dataXYZ, *normals, *_cloud);
@@ -83,7 +83,7 @@ bool Helper::getCloudAndNormals(const std::string &_inputFile, pcl::PointCloud<p
 		status = true;
 	}
 	else
-		cout << "ERROR: Can't read file from disk (" << _inputFile << ")\n";
+		std::cout << "ERROR: Can't read file from disk (" << _inputFile << ")\n";
 
 	return status;
 }

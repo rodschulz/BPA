@@ -22,7 +22,7 @@ class Helper
 {
 public:
 	static void removeNANs(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
-	static pcl::PointCloud<Normal>::Ptr getNormals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const double _searchRadius = -1);
+	static pcl::PointCloud<pcl::Normal>::Ptr getNormals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const double _searchRadius = -1);
 	static bool getCloudAndNormals(const std::string &_inputFile, pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const double _estimationRadius = -1);
 
 	static bool isOriented(const Eigen::Vector3f &_normal, const Eigen::Vector3f &_normal0, const Eigen::Vector3f &_normal1, const Eigen::Vector3f &_normal2);

@@ -22,7 +22,7 @@ Pivoter::~Pivoter()
 {
 }
 
-pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
+std::pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 {
 	DebugLevel debug = Config::getDebugLevel();
 
@@ -46,7 +46,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 	zeroAngle = plane.projection(zeroAngle).normalized();
 
 	double currentAngle = M_PI;
-	pair<int, TrianglePtr> output = make_pair(-1, TrianglePtr());
+	std::pair<int, TrianglePtr> output = std::make_pair(-1, TrianglePtr());
 
 	// Iterate over the neighborhood pivoting the ball
 	std::vector<int> indices = getNeighbors(edgeMiddle, ballRadius * 2);
@@ -57,7 +57,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 			continue;
 
 		if (debug >= MEDIUM)
-			cout << "Testing " << index << "\n";
+			std::cout << "Testing " << index << "\n";
 
 		/**
 		 * If the distance to the plane is less than the ball radius, then intersection between a ball
@@ -76,7 +76,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				{
 					if (debug >= HIGH)
 					{
-						cout << "\tDiscarded for neighbors: " << index << "\n";
+						std::cout << "\tDiscarded for neighbors: " << index << "\n";
 						Writer::writeCircumscribedSphere("discarded_neighbors", center, ballRadius, Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius), cloud, true);
 					}
 					continue;
@@ -90,7 +90,7 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				{
 					if (debug >= HIGH)
 					{
-						cout << "\tDiscarded for normal: " << index << "\n";
+						std::cout << "\tDiscarded for normal: " << index << "\n";
 						std::vector<TrianglePtr> data;
 						data.push_back(TrianglePtr(new Triangle(v0.first, v1.first, &cloud->at(index), v0.second, v1.second, index, center, ballRadius)));
 						Writer::writeMesh("discarded_normal", cloud, data, DRAW_CLOUD);
@@ -109,23 +109,23 @@ pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
 				if (output.first == -1 || currentAngle > angle)
 				{
 					if (debug >= LOW)
-						cout << "\tPoint selected: " << index << "\n";
+						std::cout << "\tPoint selected: " << index << "\n";
 
 					currentAngle = angle;
-					output = make_pair(index, TrianglePtr(new Triangle(v0.first, &cloud->points[index], v1.first, v0.second, index, v1.second, center, ballRadius)));
+					output = std::make_pair(index, TrianglePtr(new Triangle(v0.first, &cloud->points[index], v1.first, v0.second, index, v1.second, center, ballRadius)));
 				}
 
 			}
 			else
 			{
 				if (debug >= MEDIUM)
-					cout << "Can't find ball for " << index << "\n";
+					std::cout << "Can't find ball for " << index << "\n";
 			}
 		}
 		else
 		{
 			if (debug >= MEDIUM)
-				cout << "No intersection for " << index << "\n";
+				std::cout << "No intersection for " << index << "\n";
 		}
 	}
 
@@ -138,7 +138,7 @@ TrianglePtr Pivoter::findSeed()
 	double neighborhoodSize = 1.3;
 
 	TrianglePtr seed;
-	for (map<int, bool>::iterator it = used.begin(); it != used.end(); it++)
+	for (std::map<int, bool>::iterator it = used.begin(); it != used.end(); it++)
 	{
 		int index0 = it->first;
 
@@ -161,7 +161,7 @@ TrianglePtr Pivoter::findSeed()
 					continue;
 
 				if (debug >= MEDIUM)
-					cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
+					std::cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
 
 				Eigen::Vector3f center;
 				Eigen::Vector3i sequence;
@@ -171,7 +171,7 @@ TrianglePtr Pivoter::findSeed()
 					std::vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 					if (isEmpty(neighborhood, index0, index1, index2, center))
 					{
-						cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
+						std::cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
 
 						seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
 						used.erase(index0);
@@ -187,7 +187,7 @@ TrianglePtr Pivoter::findSeed()
 	return seed;
 }
 
-pair<Eigen::Vector3f, double> Pivoter::getCircumscribedCircle(const Eigen::Vector3f &_p0, const Eigen::Vector3f &_p1, const Eigen::Vector3f &_p2) const
+std::pair<Eigen::Vector3f, double> Pivoter::getCircumscribedCircle(const Eigen::Vector3f &_p0, const Eigen::Vector3f &_p1, const Eigen::Vector3f &_p2) const
 {
 	Eigen::Vector3f d10 = _p1 - _p0;
 	Eigen::Vector3f d20 = _p2 - _p0;
@@ -209,7 +209,7 @@ pair<Eigen::Vector3f, double> Pivoter::getCircumscribedCircle(const Eigen::Vecto
 	Eigen::Vector3f circumscribedCircleCenter = alpha * _p0 + beta * _p1 + gamma * _p2;
 	double circumscribedCircleRadius = (norm01 * norm12 * norm02) / (2 * norm01C12);
 
-	return make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
+	return std::make_pair(circumscribedCircleCenter, circumscribedCircleRadius);
 }
 
 bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _index2, Eigen::Vector3f &_center, Eigen::Vector3i &_sequence) const
@@ -243,7 +243,7 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 			normal.normalize();
 		}
 
-		pair<Eigen::Vector3f, double> circle = getCircumscribedCircle(p0, p1, p2);
+		std::pair<Eigen::Vector3f, double> circle = getCircumscribedCircle(p0, p1, p2);
 		double squaredDistance = ballRadius * ballRadius - circle.second * circle.second;
 		if (squaredDistance > 0)
 		{

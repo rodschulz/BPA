@@ -15,7 +15,7 @@ std::ostream &operator<<(std::ostream &_stream, const Edge &_edge)
 Edge::Edge()
 {
 	vertices.clear();
-	oppositeVertex = make_pair<pcl::PointNormal *, int>(NULL, -1);
+	oppositeVertex = std::make_pair<pcl::PointNormal *, int>(NULL, -1);
 	ballCenter = middlePoint = pcl::PointNormal();
 	pivotingRadius = 0;
 	active = false;

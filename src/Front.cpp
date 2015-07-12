@@ -21,7 +21,7 @@ EdgePtr Front::getActiveEdge()
 	if (!front.empty())
 	{
 		bool firstLoop = true;
-		for (list<EdgePtr>::iterator it = pos;; it++)
+		for (std::list<EdgePtr>::iterator it = pos;; it++)
 		{
 			if (it == front.end())
 				it = front.begin();
@@ -52,11 +52,11 @@ void Front::addEdges(const TrianglePtr &_triangle)
 		addEdgePoints(--front.end());
 
 		if (debug >= MEDIUM)
-			cout << "\tEdge added: " << *front.back() << "\n";
+			std::cout << "\tEdge added: " << *front.back() << "\n";
 	}
 }
 
-void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
+void Front::joinAndFix(const std::pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 {
 	DebugLevel debug = Config::getDebugLevel();
 
@@ -69,16 +69,16 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 		for (int i = 0; i < 2; i++)
 		{
 			EdgePtr edge = _data.second->getEdge(i);
-			list<EdgePtr>::iterator insertionPlace = front.insert(pos, edge);
+			std::list<EdgePtr>::iterator insertionPlace = front.insert(pos, edge);
 			addEdgePoints(insertionPlace);
 
 			if (debug >= MEDIUM)
-				cout << "\tEdge added: " << *edge << "\n";
+				std::cout << "\tEdge added: " << *edge << "\n";
 		}
 
 		// Remove replaced edge
 		if (debug >= MEDIUM)
-			cout << "\tEdge removed: " << **pos << "\n";
+			std::cout << "\tEdge removed: " << **pos << "\n";
 
 		front.erase(pos);
 		removeEdgePoints(*pos);
@@ -100,30 +100,30 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 			for (int i = 0; i < 2; i++)
 			{
 				EdgePtr edge = _data.second->getEdge(i);
-				list<EdgePtr>::iterator it;
+				std::list<EdgePtr>::iterator it;
 				if ((it = isPresent(edge)) != front.end())
 				{
 					// Remove the 'coincident' edge
 					if (debug >= MEDIUM)
-						cout << "\tEdge removed: " << **it << "\n";
+						std::cout << "\tEdge removed: " << **it << "\n";
 
 					removeEdgePoints(*it);
 					front.erase(it);
 				}
 				else
 				{
-					list<EdgePtr>::iterator insertionPlace = front.insert(pos, edge);
+					std::list<EdgePtr>::iterator insertionPlace = front.insert(pos, edge);
 					addEdgePoints(insertionPlace);
 					added--;
 
 					if (debug >= MEDIUM)
-						cout << "\tEdge added: " << *edge << "\n";
+						std::cout << "\tEdge added: " << *edge << "\n";
 				}
 			}
 
 			// Remove pivoting edge
 			if (debug >= MEDIUM)
-				cout << "\tEdge removed: " << **pos << "\n";
+				std::cout << "\tEdge removed: " << **pos << "\n";
 
 			front.erase(pos);
 			removeEdgePoints(*pos);
@@ -143,7 +143,7 @@ void Front::joinAndFix(const pair<int, TrianglePtr> &_data, Pivoter &_pivoter)
 			 */
 			setInactive(*pos);
 			if (debug >= LOW)
-				cout << "Edge marked as boundary: " << **pos << "\n";
+				std::cout << "Edge marked as boundary: " << **pos << "\n";
 		}
 	}
 }
@@ -165,7 +165,7 @@ void Front::setInactive(EdgePtr &_edge)
 	}
 }
 
-list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
+std::list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 {
 	int vertex0 = _edge->getVertex(0).second;
 	int vertex1 = _edge->getVertex(1).second;
@@ -176,7 +176,7 @@ list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 	else
 	{
 		// Look for a coincident edge
-		for (map<EdgePtr, list<EdgePtr>::iterator>::iterator it = points[vertex1].begin(); it != points[vertex1].end(); it++)
+		for (std::map<EdgePtr, std::list<EdgePtr>::iterator>::iterator it = points[vertex1].begin(); it != points[vertex1].end(); it++)
 		{
 			int v0 = (*it->second)->getVertex(0).second;
 			int v1 = (*it->second)->getVertex(1).second;
@@ -188,13 +188,13 @@ list<EdgePtr>::iterator Front::isPresent(const EdgePtr &_edge)
 	}
 }
 
-void Front::addEdgePoints(list<EdgePtr>::iterator &_edge)
+void Front::addEdgePoints(std::list<EdgePtr>::iterator &_edge)
 {
 	for (int i = 0; i < 2; i++)
 	{
 		PointData data = (*_edge)->getVertex(i);
 		if (points.find(data.second) == points.end())
-			points[data.second] = map<EdgePtr, list<EdgePtr>::iterator>();
+			points[data.second] = std::map<EdgePtr, std::list<EdgePtr>::iterator>();
 
 		points[data.second][(*_edge)] = _edge;
 	}
@@ -218,6 +218,6 @@ void Front::removeEdgePoints(EdgePtr &_edge)
 			}
 		}
 		else
-			cout << "WARNING, removing inexistent edge " << *_edge << "\n";
+			std::cout << "WARNING, removing inexistent edge " << *_edge << "\n";
 	}
 }
