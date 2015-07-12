@@ -23,29 +23,29 @@ Config::~Config()
 {
 }
 
-void Config::load(const string &_filename)
+void Config::load(const std::string &_filename)
 {
-	string line;
-	ifstream inputFile;
-	inputFile.open(_filename.c_str(), fstream::in);
+	std::string line;
+	std::ifstream inputFile;
+	inputFile.open(_filename.c_str(), std::fstream::in);
 	if (inputFile.is_open())
 	{
 		while (getline(inputFile, line))
 		{
 			// Parse string line
-			vector<string> tokens;
-			istringstream iss(line);
-			copy(istream_iterator<string>(iss), istream_iterator<string>(), back_inserter(tokens));
+			std::vector<std::string> tokens;
+			std::istringstream iss(line);
+			std::copy(std::istream_iterator<std::string>(iss), std::istream_iterator<std::string>(), std::back_inserter(tokens));
 
 			parse(tokens[0], tokens[1]);
 		}
 		inputFile.close();
 	}
 	else
-		cout << "Unable to open input: " << _filename;
+		std::cout << "Unable to open input: " << _filename;
 }
 
-void Config::parse(const string _key, const string _value)
+void Config::parse(const std::string _key, const std::string _value)
 {
 	if (boost::iequals(_key, "ballRadius"))
 		getInstance()->radius = atof(_value.c_str());

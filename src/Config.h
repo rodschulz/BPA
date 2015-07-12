@@ -6,8 +6,6 @@
 
 #include <string>
 
-using namespace std;
-
 enum DebugLevel
 {
 	NONE, LOW, MEDIUM, HIGH
@@ -25,7 +23,7 @@ public:
 		return instance;
 	}
 	// Loads the configuration file
-	static void load(const string &_filename);
+	static void load(const std::string &_filename);
 
 	static inline DebugLevel getDebugLevel()
 	{
@@ -39,7 +37,7 @@ private:
 	Config();
 
 	// Parses the given value according to the given key
-	static void parse(const string _key, const string _value);
+	static void parse(const std::string _key, const std::string _value);
 
 	DebugLevel level;
 	double radius;

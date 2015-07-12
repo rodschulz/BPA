@@ -19,18 +19,18 @@ Helper::~Helper()
 {
 }
 
-void Helper::removeNANs(PointCloud<PointXYZ>::Ptr &_cloud)
+void Helper::removeNANs(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
 {
 	std::vector<int> mapping;
 	removeNaNFromPointCloud(*_cloud, *_cloud, mapping);
 }
 
-PointCloud<Normal>::Ptr Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_cloud, const double _searchRadius)
+pcl::PointCloud<Normal>::Ptr Helper::getNormals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const double _searchRadius)
 {
-	PointCloud<Normal>::Ptr normals(new PointCloud<Normal>());
+	pcl::PointCloud<Normal>::Ptr normals(new pcl::PointCloud<Normal>());
 
-	search::KdTree<PointXYZ>::Ptr kdtree(new search::KdTree<PointXYZ>);
-	NormalEstimation<PointXYZ, Normal> normalEstimation;
+	search::KdTree<pcl::PointXYZ>::Ptr kdtree(new search::KdTree<pcl::PointXYZ>);
+	NormalEstimation<pcl::PointXYZ, Normal> normalEstimation;
 	normalEstimation.setInputCloud(_cloud);
 
 	if (_searchRadius > 0)
@@ -44,22 +44,22 @@ PointCloud<Normal>::Ptr Helper::getNormals(const PointCloud<PointXYZ>::Ptr &_clo
 	return normals;
 }
 
-bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal>::Ptr &_cloud, const double _estimationRadius)
+bool Helper::getCloudAndNormals(const std::string &_inputFile, pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const double _estimationRadius)
 {
 	bool status = false;
 
-	PointCloud<PointXYZ>::Ptr dataXYZ(new PointCloud<PointXYZ>());
-	if (io::loadPCDFile<PointXYZ>(_inputFile, *dataXYZ) == 0)
+	pcl::PointCloud<pcl::PointXYZ>::Ptr dataXYZ(new pcl::PointCloud<pcl::PointXYZ>());
+	if (io::loadPCDFile<pcl::PointXYZ>(_inputFile, *dataXYZ) == 0)
 	{
 		Helper::removeNANs(dataXYZ);
-		PointCloud<Normal>::Ptr normals = Helper::getNormals(dataXYZ, _estimationRadius);
+		pcl::PointCloud<Normal>::Ptr normals = Helper::getNormals(dataXYZ, _estimationRadius);
 
 		_cloud->clear();
 		concatenateFields(*dataXYZ, *normals, *_cloud);
 
 		// Create the filtering object
-//		PointCloud<PointNormal>::Ptr filtered(new PointCloud<PointNormal>());
-//		pcl::PassThrough<pcl::PointNormal> pass;
+//		pcl::PointCloud<pcl::PointNormal>::Ptr filtered(new pcl::PointCloud<pcl::PointNormal>());
+//		pcl::PassThrough<pcl::pcl::PointNormal> pass;
 //		pass.setInputCloud(_cloud);
 //		pass.setFilterFieldName("z");
 //		pass.setFilterLimits(0.0, 1e20);
@@ -88,7 +88,7 @@ bool Helper::getCloudAndNormals(const string &_inputFile, PointCloud<PointNormal
 	return status;
 }
 
-bool Helper::isOriented(const Vector3f &_normal, const Vector3f &_normal0, const Vector3f &_normal1, const Vector3f &_normal2)
+bool Helper::isOriented(const Eigen::Vector3f &_normal, const Eigen::Vector3f &_normal0, const Eigen::Vector3f &_normal1, const Eigen::Vector3f &_normal2)
 {
 	int count = 0;
 	count = _normal0.dot(_normal) < 0 ? count + 1 : count;
@@ -98,36 +98,36 @@ bool Helper::isOriented(const Vector3f &_normal, const Vector3f &_normal0, const
 	return count <= 1;
 }
 
-void Helper::fixNormals(PointCloud<PointNormal>::Ptr &_cloud)
+void Helper::fixNormals(pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
-	PointNormal minLimit, maxLimit;
+	pcl::PointNormal minLimit, maxLimit;
 	getMinMax3D(*_cloud, minLimit, maxLimit);
 
 	//io::savePCDFileASCII("./orig.pcd", *_cloud);
 
 	// Create the surrounding reference points
-	PointCloud<PointNormal>::Ptr surrounds = generateSurroundingSet(minLimit, maxLimit);
+	pcl::PointCloud<pcl::PointNormal>::Ptr surrounds = generateSurroundingSet(minLimit, maxLimit);
 	//io::savePCDFileASCII("./surround.pcd", *surrounds);
 
-	KdTreeFLANN<pcl::PointNormal> kdtree;
+	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
 	kdtree.setInputCloud(surrounds);
 
 	int K = 3;
 	for (size_t i = 0; i < _cloud->size(); i++)
 	{
-		PointNormal point = _cloud->at(i);
+		pcl::PointNormal point = _cloud->at(i);
 
 		if (i == 16749)
 			int x = 11;
 
-		vector<int> indices(K);
-		vector<float> distances(K);
+		std::vector<int> indices(K);
+		std::vector<float> distances(K);
 		if (kdtree.nearestKSearch(point, K, indices, distances) > 0)
 		{
 			int flip = 0;
 			for (size_t j = 0; j < indices.size(); j++)
 			{
-				Vector3f direction = surrounds->at(indices[j]).getVector3fMap() - point.getVector3fMap();
+				Eigen::Vector3f direction = surrounds->at(indices[j]).getVector3fMap() - point.getVector3fMap();
 				if (point.getNormalVector3fMap().dot(direction) < 0)
 					flip += 1;
 			}
@@ -144,9 +144,9 @@ void Helper::fixNormals(PointCloud<PointNormal>::Ptr &_cloud)
 	//io::savePCDFileASCII("./fixed.pcd", *_cloud);
 }
 
-PointNormal Helper::makePointNormal(const float _x, const float _y, const float _z, const float _nx, const float _ny, const float _nz, const float _curvature)
+pcl::PointNormal Helper::makePointNormal(const float _x, const float _y, const float _z, const float _nx, const float _ny, const float _nz, const float _curvature)
 {
-	PointNormal point;
+	pcl::PointNormal point;
 	point.x = _x;
 	point.y = _y;
 	point.z = _z;
@@ -157,9 +157,9 @@ PointNormal Helper::makePointNormal(const float _x, const float _y, const float 
 	return point;
 }
 
-PointNormal Helper::makePointNormal(const Vector3f &_data)
+pcl::PointNormal Helper::makePointNormal(const Eigen::Vector3f &_data)
 {
-	PointNormal point;
+	pcl::PointNormal point;
 	point.x = _data.x();
 	point.y = _data.y();
 	point.z = _data.z();
@@ -170,9 +170,9 @@ PointNormal Helper::makePointNormal(const Vector3f &_data)
 	return point;
 }
 
-PointCloud<PointNormal>::Ptr Helper::generateSurroundingSet(const PointNormal &_min, const PointNormal &_max)
+pcl::PointCloud<pcl::PointNormal>::Ptr Helper::generateSurroundingSet(const pcl::PointNormal &_min, const pcl::PointNormal &_max)
 {
-	PointCloud<PointNormal>::Ptr surrounding(new PointCloud<PointNormal>());
+	pcl::PointCloud<pcl::PointNormal>::Ptr surrounding(new pcl::PointCloud<pcl::PointNormal>());
 	float factor = 0.25;
 
 	float deltax = _max.x - _min.x;

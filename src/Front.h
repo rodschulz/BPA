@@ -9,8 +9,6 @@
 #include <map>
 #include <list>
 
-using namespace std;
-
 class Front
 {
 public:
@@ -28,11 +26,11 @@ public:
 	}
 
 private:
-	list<EdgePtr>::iterator isPresent(const EdgePtr &_edge);
+	std::list<EdgePtr>::iterator isPresent(const EdgePtr &_edge);
 	void addEdgePoints(list<EdgePtr>::iterator &_edge);
 	void removeEdgePoints(EdgePtr &_edge);
 
-	list<EdgePtr> front;
-	list<EdgePtr>::iterator pos;
-	map<int, map<EdgePtr, list<EdgePtr>::iterator> > points;
+	std::list<EdgePtr> front;
+	std::list<EdgePtr>::iterator pos;
+	std::map<int, map<EdgePtr, list<EdgePtr>::iterator> > points;
 };

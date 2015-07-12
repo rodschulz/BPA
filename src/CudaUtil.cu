@@ -3,24 +3,15 @@
  * 2015
  */
 #include "CudaUtil.h"
-#include <cuda_runtime.h>
 #include <ostream>
 #include <iostream>
 
 #define BLOCKS		20
 #define THREADS		256
 
-#define cudaCheckErrors(msg) \
-	do { \
-		cudaError_t __err = cudaGetLastError(); \
-		if (__err != cudaSuccess) { \
-			fprintf(stderr, "Fatal error: %s (%s at %s:%d)\n", \
-			msg, cudaGetErrorString(__err), \
-			__FILE__, __LINE__); \
-			fprintf(stderr, "*** FAILED - ABORTING\n"); \
-			exit(1); \
-		} \
-	} while (0)
+// Pointer to memory in device
+struct Point;
+Point *devPoints = NULL;
 
 struct BallCenter
 {
@@ -36,11 +27,6 @@ struct Point
 	float c;
 	float fill[3];
 
-	__host__ __device__ Point()
-	{
-		x = y = z = w = nx = ny = nz = nw = c = fill[0] = fill[1] = fill[2] = 0;
-	}
-
 	__device__ Point operator-(const Point &_p)
 	{
 		Point result;
@@ -48,6 +34,22 @@ struct Point
 		result.y = y - _p.y;
 		result.z = z - _p.z;
 		return result;
+	}
+
+	__device__ double sqrDist(const Point &_p) const
+	{
+		double dx = x - _p.x;
+		double dy = y - _p.y;
+		double dz = z - _p.z;
+		return dx * dx + dy * dy + dz * dz;
+	}
+
+	__device__ double dist(const Point &_p) const
+	{
+		double dx = x - _p.x;
+		double dy = y - _p.y;
+		double dz = z - _p.z;
+		return sqrt(dx * dx + dy * dy + dz * dz);
 	}
 };
 
@@ -57,53 +59,20 @@ std::ostream &operator<<(std::ostream &_stream, const BallCenter &_center)
 	return _stream;
 }
 
-size_t getAvailableMemory()
+void CudaUtil::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
-	size_t freeMem, totalMem;
-	cudaMemGetInfo(&freeMem, &totalMem);
-	cudaCheckErrors("memInfo failed");
-	return freeMem;
+	size_t cloudBytes = sizeof(pcl::PointNormal) * _cloud->size();
+	cudaMalloc((void **) &devPoints, cloudBytes);
+	cudaCheckErrors("cudaMalloc points failed");
+	cudaMemcpy(devPoints, &_cloud->points[0], cloudBytes, cudaMemcpyHostToDevice);
+	cudaCheckErrors("cudaMemcpy points to dev failed");
 }
 
 __global__ void calculateBalls(const Point *_points, BallCenter *_balls, const int _initialRow, const int _pointsPerThread, const int _pointNumber)
 {
-
-
-//	// Begin and end points
-//	int beginPoint = ptsPerBlock * blockIdx.x + ptsPerThread * threadIdx.x;
-//	int endPoint = beginPoint + ptsPerThread;
-//
-//	for (int i = beginPoint; i < endPoint; i++)
-//	{
-//		for (int j = 0; j < _pointNumber; j++)
-//		{
-//			for (int k = 0; k < _pointNumber; k++)
-//			{
-//			}
-//		}
-//	}
 	_balls[blockIdx.x].cx = blockDim.x;
 	_balls[blockIdx.x].cy = blockDim.y;
 	_balls[blockIdx.x].cz = blockDim.z;
-
-//	for (int i = )
-//	{}
-
-//	bool status = false;
-//
-//	Eigen::Vector3f p0 = cloud->at(_index0).getVector3fMap();
-//	Eigen::Vector3f p1 = cloud->at(_index1).getVector3fMap();
-//	Eigen::Vector3f p2 = cloud->at(_index2).getVector3fMap();
-//	_sequence = Eigen::Vector3i(_index0, _index1, _index2);
-//
-//	Eigen::Vector3f v10 = p1 - p0;
-//	Eigen::Vector3f v20 = p2 - p0;
-//	Eigen::Vector3f normal = v10.cross(v20);
-//
-//	// Calculate ball center only if points are not collinear
-//	if (normal.norm() > COMPARISON_EPSILON)
-//	{
-//	}
 }
 
 bool CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
@@ -111,16 +80,10 @@ bool CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr
 	bool statusOk = true;
 
 	size_t pointNumber = _cloud->size();
-	Point *devPoints;
 	BallCenter *devBalls;
 	BallCenter *balls = (BallCenter*) calloc(pointNumber * pointNumber * pointNumber, sizeof(BallCenter));
 
-	size_t totalB = pointNumber * pointNumber * pointNumber * sizeof(BallCenter);
-	size_t totaMB = totalB / 1E6;
-	size_t totaGB = totalB / 1E9;
-
 	size_t cloudBytes = sizeof(pcl::PointNormal) * pointNumber;
-	size_t rowLength = pointNumber - 2;
 	size_t resultBytes = sizeof(BallCenter) * pointNumber;
 	float usageFactor = 0.733333333; // this is (2 * 1.1) / 2,  that is a 10% over 2/3 of all the available memory
 
@@ -182,4 +145,63 @@ bool CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr
 	free(balls);
 
 	return statusOk;
+}
+
+__global__ void searchCloserPoints(const int _target, const Point *_points, const int _pointNumber, const double _searchRadius, const int _pointsPerThread, bool *_selected)
+{
+	int startIdx = (blockIdx.x * blockDim.x + threadIdx.x) * _pointsPerThread;
+	double sqrRadius = _searchRadius * _searchRadius;
+
+	if (startIdx < _pointNumber)
+	{
+		for (int i = startIdx; i < startIdx + _pointsPerThread; i++)
+		{
+			_selected[i] = _points[_target].sqrDist(_points[i]) < sqrRadius;
+			//_selected[i] = _points[_target].dist(_points[i]) < _searchRadius;
+		}
+	}
+}
+
+bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int _target, double _radius, std::vector<int> _idxs)
+{
+	int blocks = 10;
+	int threads = 10;
+	size_t cloudSize = _cloud->size();
+
+	// Copy points to device
+	if (devPoints == NULL)
+		allocPoints(_cloud);
+
+	// Array to store points within radius
+	bool *devSelected;
+	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
+	cudaCheckErrors("cudaMalloc selected failed");
+
+	// Calculate adequate number of blocks and threads
+	while (cloudSize / blocks < 2)
+		blocks /= 2;
+	int pointsPerBlock = ceil((double) cloudSize / blocks);
+
+	while (pointsPerBlock / threads < 1)
+		threads /= 2;
+	int pointsPerThread = ceil((double) pointsPerBlock / threads);
+
+	// Execute kernel
+	searchCloserPoints<<<blocks, threads>>>(_target, devPoints, cloudSize, _radius, pointsPerThread, devSelected);
+
+	// Copy data to host
+	bool *selected = (bool *) calloc(cloudSize, sizeof(bool));
+	cudaMemcpy(selected, devSelected, sizeof(bool) * cloudSize, cudaMemcpyDeviceToHost);
+	cudaCheckErrors("cudaMemcpy selected failed");
+	cudaFree(devSelected);
+	cudaCheckErrors("cudaFree selected failed");
+
+//	std::vector<int> idxs;
+	for (size_t i = 0; i < cloudSize; i++)
+		if (selected[i])
+			_idxs.push_back(i);
+
+	free(selected);
+
+	return true;
 }
