@@ -19,6 +19,14 @@ Helper::~Helper()
 {
 }
 
+int Helper::getRandomNumber(const int _min, const int _max)
+{
+	srand(rand());
+	srand(rand());
+	int number = _min + (rand() % (int) (_max - _min + 1));
+	return number;
+}
+
 void Helper::removeNANs(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud)
 {
 	std::vector<int> mapping;

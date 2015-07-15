@@ -18,6 +18,7 @@ int main(int _argn, char **_argv)
 {
 	if (system("rm -rf ./output/*") != 0)
 		std::cout << "ERROR: bad command\n";
+
 	if (_argn < 2)
 	{
 		std::cout << "Not enough arguments\n";
@@ -44,18 +45,47 @@ int main(int _argn, char **_argv)
 
 	/////////////////////////
 	//CudaUtil::calculateBallCenters(cloud);
-
-//	clock_t begin2 = clock();
+//	std::vector<int> idxs2;
+//	CudaUtil::radiusSearch(cloud, 1, ballRadius, idxs2);
 //
-//	int targetIdx = 3;
-//	std::vector<int> idxs;
-//	CudaUtil::radiusSearch(cloud, targetIdx, ballRadius, idxs);
+//	double accCuda = 0;
+//	double accPCL = 0;
+//	for (int k = 0; k < 100; k++)
+//	{
+//		int targetIdx = Helper::getRandomNumber(0, cloud->size() - 1);
+//		pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
+//		kdtree.setInputCloud(cloud);
 //
-//	std::vector<int> indices;
-//	std::vector<float> distances;
-//	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
-//	kdtree.setInputCloud(cloud);
-//	kdtree.radiusSearch(cloud->at(targetIdx), ballRadius, indices, distances);
+//		clock_t startCUDA = clock();
+//		std::vector<int> idxs;
+//		CudaUtil::radiusSearch(cloud, targetIdx, ballRadius, idxs);
+//		clock_t endCUDA = clock();
+//
+//		clock_t startPCL = clock();
+//		std::vector<int> indices;
+//		std::vector<float> distances;
+//		kdtree.radiusSearch(cloud->at(targetIdx), ballRadius, indices, distances);
+//		clock_t endPCL = clock();
+//
+//		double factor = 1000;
+//		double timeCUDA = (double) (endCUDA - startCUDA) * factor / CLOCKS_PER_SEC;
+//		double timePCL = (double) (endPCL - startPCL) * factor / CLOCKS_PER_SEC;
+//
+//		accCuda += timeCUDA;
+//		accPCL += timePCL;
+//
+//		std::cout << std::setprecision(3) << "CUDA: " << timeCUDA << " [ms]\nPCL : " << timePCL << " [ms]\n----------" << std::endl;
+//
+//		// validate points
+//		std::map<int, bool> validation;
+//		for (size_t i = 0; i < idxs.size(); i++)
+//			validation[idxs[i]] = true;
+//
+//		for (size_t i = 0; i < indices.size(); i++)
+//			if (validation.find(indices[i]) == validation.end())
+//				std::cout << "Can't find index " << indices[i] << " for point " << targetIdx << std::endl;
+//	}
+//	std::cout << std::setprecision(3) << "Acc CUDA: " << accCuda << " [ms]\nAcc PCL : " << accPCL << " [ms]" << std::endl;
 //
 //	return EXIT_SUCCESS;
 

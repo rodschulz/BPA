@@ -15,7 +15,7 @@ Pivoter::Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const dou
 	kdtree.setInputCloud(cloud);
 
 	for (size_t i = 0; i < _cloud->size(); i++)
-		used[i] = false;
+		notUsed[i] = false;
 }
 
 Pivoter::~Pivoter()
@@ -138,7 +138,11 @@ TrianglePtr Pivoter::findSeed()
 	double neighborhoodSize = 1.3;
 
 	TrianglePtr seed;
-	for (std::map<int, bool>::iterator it = used.begin(); it != used.end(); it++)
+	bool found = false;
+	std::map<unsigned long, bool> tested;
+	std::cout << "Remaining points " << notUsed.size() << std::endl;
+
+	for (std::map<int, bool>::iterator it = notUsed.begin(); it != notUsed.end() && !found; it++)
 	{
 		int index0 = it->first;
 
@@ -148,36 +152,60 @@ TrianglePtr Pivoter::findSeed()
 			continue;
 
 		// Look for a valid seed
+#pragma omp parallel for
 		for (size_t j = 0; j < indices.size(); j++)
 		{
-			int index1 = indices[j];
-			if (index1 == index0 || used.find(index1) == used.end())
-				continue;
-
-			for (size_t k = 0; k < indices.size(); k++)
+			if (!found)
 			{
-				int index2 = indices[k];
-				if (index1 == index2 || index2 == index0 || used.find(index2) == used.end())
+				int index1 = indices[j];
+				if (index1 == index0 || notUsed.find(index1) == notUsed.end())
 					continue;
 
-				if (debug >= MEDIUM)
-					std::cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
-
-				Eigen::Vector3f center;
-				Eigen::Vector3i sequence;
-				if (getBallCenter(index0, index1, index2, center, sequence))
+				for (size_t k = 0; k < indices.size() && !found; k++)
 				{
-					pcl::PointNormal ballCenter = Helper::makePointNormal(center);
-					std::vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
-					if (isEmpty(neighborhood, index0, index1, index2, center))
-					{
-						std::cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
+					int index2 = indices[k];
 
-						seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
-						used.erase(index0);
-						used.erase(index1);
-						used.erase(index2);
-						return seed;
+					std::vector<int> trio;
+					trio.push_back(index0);
+					trio.push_back(index1);
+					trio.push_back(index2);
+					std::sort(trio.begin(), trio.end());
+					unsigned long code = trio[0] + 1e5 * trio[1] + 1e10 * trio[2];
+
+					if (tested.find(code) != tested.end() || index1 == index2 || index2 == index0 || notUsed.find(index2) == notUsed.end())
+						continue;
+#pragma omp critical
+					{
+						tested[code] = true;
+					}
+
+					if (debug >= MEDIUM)
+						std::cout << "\tTesting (" << index0 << ", " << index1 << ", " << index2 << ")\n";
+
+					Eigen::Vector3f center;
+					Eigen::Vector3i sequence;
+					if (!found && getBallCenter(index0, index1, index2, center, sequence))
+					{
+						pcl::PointNormal ballCenter = Helper::makePointNormal(center);
+						std::vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
+						if (!found && isEmpty(neighborhood, index0, index1, index2, center))
+						{
+#pragma omp critical
+							{
+								if (!found)
+								{
+									std::cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
+
+									seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
+									notUsed.erase(index0);
+									notUsed.erase(index1);
+									notUsed.erase(index2);
+
+									found = true;
+								}
+							}
+							//return seed;
+						}
 					}
 				}
 			}
@@ -225,10 +253,10 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 	Eigen::Vector3f v20 = p2 - p0;
 	Eigen::Vector3f normal = v10.cross(v20);
 
-	// Calculate ball center only if points are not collinear
+// Calculate ball center only if points are not collinear
 	if (normal.norm() > COMPARISON_EPSILON)
 	{
-		// Normalize to avoid precision errors while checking the orientation
+// Normalize to avoid precision errors while checking the orientation
 		normal.normalize();
 		if (!Helper::isOriented(normal, (Eigen::Vector3f) cloud->at(_index0).getNormalVector3fMap(), (Eigen::Vector3f) cloud->at(_index1).getNormalVector3fMap(), (Eigen::Vector3f) cloud->at(_index2).getNormalVector3fMap()))
 		{
@@ -259,7 +287,7 @@ bool Pivoter::isEmpty(const std::vector<int> &_data, const int _index0, const in
 {
 //	if (_data.size() > 3)
 //		return false;
-	// TODO make this a little faster by making the query to the cloud here and using the distances already given by the query
+// TODO make this a little faster by making the query to the cloud here and using the distances already given by the query
 	if (_data.empty())
 		return true;
 

@@ -12,6 +12,7 @@
 // Pointer to memory in device
 struct Point;
 Point *devPoints = NULL;
+bool *devSelected = NULL;
 
 struct BallCenter
 {
@@ -66,6 +67,9 @@ void CudaUtil::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 	cudaCheckErrors("cudaMalloc points failed");
 	cudaMemcpy(devPoints, &_cloud->points[0], cloudBytes, cudaMemcpyHostToDevice);
 	cudaCheckErrors("cudaMemcpy points to dev failed");
+
+	cudaMalloc((void **) &devSelected, sizeof(bool) * _cloud->size());
+	cudaCheckErrors("cudaMalloc selected failed");
 }
 
 __global__ void calculateBalls(const Point *_points, BallCenter *_balls, const int _initialRow, const int _pointsPerThread, const int _pointNumber)
@@ -157,15 +161,14 @@ __global__ void searchCloserPoints(const int _target, const Point *_points, cons
 		for (int i = startIdx; i < startIdx + _pointsPerThread; i++)
 		{
 			_selected[i] = _points[_target].sqrDist(_points[i]) < sqrRadius;
-			//_selected[i] = _points[_target].dist(_points[i]) < _searchRadius;
 		}
 	}
 }
 
-bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int _target, double _radius, std::vector<int> _idxs)
+bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int _target, double _radius, std::vector<int> &_idxs)
 {
 	int blocks = 10;
-	int threads = 10;
+	int threads = 256;
 	size_t cloudSize = _cloud->size();
 
 	// Copy points to device
@@ -173,9 +176,9 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 		allocPoints(_cloud);
 
 	// Array to store points within radius
-	bool *devSelected;
-	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
-	cudaCheckErrors("cudaMalloc selected failed");
+//	bool *devSelected;
+//	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
+//	cudaCheckErrors("cudaMalloc selected failed");
 
 	// Calculate adequate number of blocks and threads
 	while (cloudSize / blocks < 2)
@@ -193,10 +196,9 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 	bool *selected = (bool *) calloc(cloudSize, sizeof(bool));
 	cudaMemcpy(selected, devSelected, sizeof(bool) * cloudSize, cudaMemcpyDeviceToHost);
 	cudaCheckErrors("cudaMemcpy selected failed");
-	cudaFree(devSelected);
-	cudaCheckErrors("cudaFree selected failed");
+//	cudaFree(devSelected);
+//	cudaCheckErrors("cudaFree selected failed");
 
-//	std::vector<int> idxs;
 	for (size_t i = 0; i < cloudSize; i++)
 		if (selected[i])
 			_idxs.push_back(i);

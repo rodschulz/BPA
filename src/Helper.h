@@ -21,6 +21,8 @@ template<typename T> int sign(T val)
 class Helper
 {
 public:
+	static int getRandomNumber(const int _min, const int _max);
+
 	static void removeNANs(pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud);
 	static pcl::PointCloud<pcl::Normal>::Ptr getNormals(const pcl::PointCloud<pcl::PointXYZ>::Ptr &_cloud, const double _searchRadius = -1);
 	static bool getCloudAndNormals(const std::string &_inputFile, pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const double _estimationRadius = -1);

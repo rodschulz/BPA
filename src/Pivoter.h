@@ -28,12 +28,12 @@ public:
 
 	inline bool isUsed(const int _index) const
 	{
-		return used.find(_index) == used.end();
+		return notUsed.find(_index) == notUsed.end();
 	}
 
 	inline void setUsed(const int _index)
 	{
-		used.erase(_index);
+		notUsed.erase(_index);
 	}
 
 private:
@@ -45,6 +45,6 @@ private:
 
 	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
 	pcl::PointCloud<pcl::PointNormal>::Ptr cloud;
-	std::map<int, bool> used;
+	std::map<int, bool> notUsed;
 	double ballRadius;
 };
