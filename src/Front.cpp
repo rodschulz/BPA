@@ -80,8 +80,8 @@ void Front::joinAndFix(const std::pair<int, TrianglePtr> &_data, Pivoter &_pivot
 		if (debug >= MEDIUM)
 			std::cout << "\tEdge removed: " << **pos << "\n";
 
-		front.erase(pos);
 		removeEdgePoints(*pos);
+		front.erase(pos);
 
 		// Move iterator to the first added new edge
 		advance(pos, -2);
@@ -125,8 +125,8 @@ void Front::joinAndFix(const std::pair<int, TrianglePtr> &_data, Pivoter &_pivot
 			if (debug >= MEDIUM)
 				std::cout << "\tEdge removed: " << **pos << "\n";
 
-			front.erase(pos);
 			removeEdgePoints(*pos);
+			front.erase(pos);
 
 			// Move iterator to the first added new edge
 			if (added < 0)

@@ -1,6 +1,11 @@
 build/*
 input/*
+meshes/*
 output/*
 .settings/*
 .cproject
 .project
+
+times
+config_*
+run.sh
