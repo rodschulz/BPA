@@ -12,13 +12,22 @@
 // Pointer to memory in device
 struct Point;
 Point *devPoints = NULL;
-bool *devSelected = NULL;
+bool *devNotUsed = NULL;
 
 struct BallCenter
 {
 	float cx, cy, cz;
 	int idx1, idx2, idx3;
 	bool isValid;
+
+	__device__ BallCenter(const int _idx1, const int _idx2, const int _idx3)
+	{
+		idx1 = _idx1;
+		idx2 = _idx2;
+		idx3 = _idx3;
+		cx = cy = cz = 0;
+		isValid = false;
+	}
 };
 
 struct Point
@@ -65,90 +74,19 @@ void CudaUtil::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 	size_t cloudBytes = sizeof(pcl::PointNormal) * _cloud->size();
 	cudaMalloc((void **) &devPoints, cloudBytes);
 	cudaCheckErrors("cudaMalloc points failed");
+
 	cudaMemcpy(devPoints, &_cloud->points[0], cloudBytes, cudaMemcpyHostToDevice);
 	cudaCheckErrors("cudaMemcpy points to dev failed");
-
-	cudaMalloc((void **) &devSelected, sizeof(bool) * _cloud->size());
-	cudaCheckErrors("cudaMalloc selected failed");
 }
 
-__global__ void calculateBalls(const Point *_points, BallCenter *_balls, const int _initialRow, const int _pointsPerThread, const int _pointNumber)
+void CudaUtil::allocUsed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const bool* _notUsed)
 {
-	_balls[blockIdx.x].cx = blockDim.x;
-	_balls[blockIdx.x].cy = blockDim.y;
-	_balls[blockIdx.x].cz = blockDim.z;
-}
+	size_t bytes = sizeof(bool) * _cloud->size();
+	cudaMalloc((void **) &devNotUsed, bytes);
+	cudaCheckErrors("cudaMalloc notUsed failed");
 
-bool CudaUtil::calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
-{
-	bool statusOk = true;
-
-	size_t pointNumber = _cloud->size();
-	BallCenter *devBalls;
-	BallCenter *balls = (BallCenter*) calloc(pointNumber * pointNumber * pointNumber, sizeof(BallCenter));
-
-	size_t cloudBytes = sizeof(pcl::PointNormal) * pointNumber;
-	size_t resultBytes = sizeof(BallCenter) * pointNumber;
-	float usageFactor = 0.733333333; // this is (2 * 1.1) / 2,  that is a 10% over 2/3 of all the available memory
-
-	size_t freeMem = getAvailableMemory();
-	std::cout << "Available mem: " << freeMem << std::endl;
-
-	// Check if there's available at least the minimum amount of memory needed
-	if (cloudBytes + resultBytes < freeMem * usageFactor)
-	{
-		// Alloc memory on the device and copy cloud data to it
-		cudaMalloc((void **) &devPoints, cloudBytes);
-		cudaCheckErrors("cudaMalloc 1 failed");
-		cudaMemcpy(devPoints, &_cloud->points[0], cloudBytes, cudaMemcpyHostToDevice);
-		cudaCheckErrors("cudaMemcpy to dev failed");
-
-		freeMem = getAvailableMemory();
-		std::cout << "Available mem: " << freeMem << std::endl;
-
-		// Get max number of "rows" that cant be simultaneously processed
-		int rowsPerCall = 0;
-		while (rowsPerCall * resultBytes < freeMem * usageFactor)
-			rowsPerCall++;
-
-		if (rowsPerCall == 0)
-		{
-			cudaFree(devPoints);
-			statusOk = false;
-		}
-		else
-		{
-			resultBytes = sizeof(BallCenter) * pointNumber * rowsPerCall;
-
-			// Alloc memory for the results
-			cudaMalloc((void **) &devBalls, resultBytes);
-			cudaCheckErrors("cudaMalloc 2 failed");
-			cudaMemset(devBalls, 0, resultBytes);
-			cudaCheckErrors("cudaMemset failed");
-
-			// Determine the number rows to be processed in each block and the number of points procesed by each thread
-			int rowsPerBlock = ceil((float) rowsPerCall / BLOCKS);
-			int pointsPerThread = ceil((float) rowsPerBlock * pointNumber / THREADS);
-
-			// Process the data
-			int totalRows = pointNumber * (pointNumber - 1);
-			for (int initialRow = 0; initialRow < totalRows; initialRow += rowsPerCall)
-			{
-				calculateBalls<<<BLOCKS, THREADS>>>(devPoints, devBalls, initialRow, pointsPerThread, pointNumber);
-
-				// Copy data back to host
-				cudaMemcpy(balls, devBalls, resultBytes, cudaMemcpyDeviceToHost);
-				cudaCheckErrors("cudaMemcpy to host failed");
-			}
-		}
-	}
-	else
-		statusOk = false;
-
-	// Free allocated memory
-	free(balls);
-
-	return statusOk;
+	cudaMemset(devNotUsed, 0, bytes);
+	cudaCheckErrors("cudaMemset notUsed failed");
 }
 
 __global__ void searchCloserPoints(const int _target, const Point *_points, const int _pointNumber, const double _searchRadius, const int _pointsPerThread, bool *_selected)
@@ -156,12 +94,9 @@ __global__ void searchCloserPoints(const int _target, const Point *_points, cons
 	int startIdx = (blockIdx.x * blockDim.x + threadIdx.x) * _pointsPerThread;
 	double sqrRadius = _searchRadius * _searchRadius;
 
-	if (startIdx < _pointNumber)
+	for (int i = startIdx; i < startIdx + _pointsPerThread && i < _pointNumber; i++)
 	{
-		for (int i = startIdx; i < startIdx + _pointsPerThread; i++)
-		{
-			_selected[i] = _points[_target].sqrDist(_points[i]) < sqrRadius;
-		}
+		_selected[i] = _points[_target].sqrDist(_points[i]) < sqrRadius;
 	}
 }
 
@@ -176,9 +111,9 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 		allocPoints(_cloud);
 
 	// Array to store points within radius
-//	bool *devSelected;
-//	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
-//	cudaCheckErrors("cudaMalloc selected failed");
+	bool *devSelected;
+	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
+	cudaCheckErrors("cudaMalloc selected failed");
 
 	// Calculate adequate number of blocks and threads
 	while (cloudSize / blocks < 2)
@@ -196,14 +131,111 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 	bool *selected = (bool *) calloc(cloudSize, sizeof(bool));
 	cudaMemcpy(selected, devSelected, sizeof(bool) * cloudSize, cudaMemcpyDeviceToHost);
 	cudaCheckErrors("cudaMemcpy selected failed");
-//	cudaFree(devSelected);
-//	cudaCheckErrors("cudaFree selected failed");
+	//cudaFree(devSelected);
+	//cudaCheckErrors("cudaFree selected failed");
 
 	for (size_t i = 0; i < cloudSize; i++)
 		if (selected[i])
 			_idxs.push_back(i);
 
 	free(selected);
+
+	return true;
+}
+
+///////////////////////////////
+__device__ bool getBallCenter(const Point *_p1, const Point *_p2, const Point *_p3, BallCenter *_center)
+{
+	return false;
+}
+
+__global__ void checkForSeeds(const Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0)
+{
+	int startIdx = 0;	//(blockIdx.x * blockDim.x + threadIdx.x) * _pointsPerThread;
+	int endIdx = 0;	//calcular_esto;
+
+	__shared__ bool found;
+	found = false;
+
+	//__syncthreads();
+
+	for (int j = startIdx; j < endIdx && j < _neighborsSize; j++)
+	{
+		if (!found)
+		{
+			int index1 = _neighbors[j];
+
+			// Skip invalid combinations
+			if (index1 == _index0 || !_notUsed[index1])
+				continue;
+
+			for (size_t k = 0; k < _neighborsSize && !found; k++)
+			{
+				int index2 = _neighbors[k];
+
+				// Skip invalid combinations
+				if (index1 == index2 || index2 == _index0 || !_notUsed[index2])
+					continue;
+
+				BallCenter center(_index0, index1, index2);
+				if (!found && getBallCenter(&_points[_index0], &_points[index1], &_points[index2], &center))
+				{
+//					pcl::PointNormal ballCenter = Helper::makePointNormal(center);
+//					std::vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
+//					if (!found && isEmpty(neighborhood, index0, index1, index2, center))
+//					{
+//						if (!found)
+//						{
+//
+//							ESTO TIENE
+//							QUE SER
+//							EN UN
+//							BLOQUE CON
+//							MUTEX
+//							!
+//
+//							seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
+//							devNotUsed.erase(index0);
+//							devNotUsed.erase(index1);
+//							devNotUsed.erase(index2);
+//
+//							found = true;
+//
+//							break;
+//						}
+//					}
+				}
+			}
+		}
+	}
+}
+
+bool CudaUtil::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0)
+{
+	int blocks = 10;
+	int threads = 256;
+	size_t cloudSize = _cloud->size();
+
+	// Prepare memory buffers
+	if (devPoints == NULL)
+		allocPoints(_cloud);
+	if (devNotUsed == NULL)
+		allocUsed(_cloud, _notUsed);
+
+	// Copy not used data to dev
+	size_t notUsedBytes = sizeof(bool) * _cloud->size();
+	cudaMemcpy(devNotUsed, _notUsed, notUsedBytes, cudaMemcpyHostToDevice);
+	cudaCheckErrors("cudaMemcpy notUsed to dev failed");
+
+	// Create and prepare buffer with neighbors indices
+	int *devNeighbors;
+	size_t neighborsBytes = sizeof(int) * _neighbors.size();
+	cudaMalloc((void **) &devNeighbors, neighborsBytes);
+	cudaCheckErrors("cudaMalloc neighbors failed");
+	cudaMemcpy(devNeighbors, &_neighbors[0], neighborsBytes, cudaMemcpyHostToDevice);
+	cudaCheckErrors("cudaMemcpy neighbors to dev failed");
+
+	checkForSeeds<<<1, 1>>>(devPoints, _cloud->size(), devNeighbors, _neighbors.size(), devNotUsed, _index0);
 
 	return true;
 }

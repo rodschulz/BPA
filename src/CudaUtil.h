@@ -26,6 +26,8 @@ public:
 	static bool calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud);
 	static bool radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int target, double _radius, std::vector<int> &_idxs);
 
+	static bool findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0);
+
 private:
 	CudaUtil()
 	{
@@ -35,6 +37,7 @@ private:
 	}
 
 	static void allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud);
+	static void allocUsed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const bool* _notUsed);
 
 	static size_t getAvailableMemory()
 	{
