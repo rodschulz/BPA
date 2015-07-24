@@ -44,7 +44,6 @@ int main(int _argn, char **_argv)
 	std::cout << "Loaded " << cloud->size() << " points in cloud\n";
 
 	/////////////////////////
-	//CudaUtil::calculateBallCenters(cloud);
 //	std::vector<int> idxs2;
 //	CudaUtil::radiusSearch(cloud, 1, ballRadius, idxs2);
 //
@@ -82,13 +81,27 @@ int main(int _argn, char **_argv)
 //			validation[idxs[i]] = true;
 //
 //		for (size_t i = 0; i < indices.size(); i++)
+//		{
 //			if (validation.find(indices[i]) == validation.end())
 //				std::cout << "Can't find index " << indices[i] << " for point " << targetIdx << std::endl;
+//			else
+//				validation.erase(indices[i]);
+//		}
+//		if (!validation.empty())
+//			std::cout << "Extra items (" << validation.size() << ")added to result" << std::endl;
 //	}
 //	std::cout << std::setprecision(3) << "Acc CUDA: " << accCuda << " [ms]\nAcc PCL : " << accPCL << " [ms]" << std::endl;
-//
-//	return EXIT_SUCCESS;
 
+	int index = 70;
+	std::vector<int> indices;
+	std::vector<float> distances;
+	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
+	kdtree.setInputCloud(cloud);
+	kdtree.radiusSearch(cloud->at(index), ballRadius, indices, distances);
+	bool *notUsed = (bool *)calloc(cloud->size(), sizeof(bool));
+	CudaUtil::findSeed(cloud, indices, notUsed, index);
+
+	return EXIT_SUCCESS;
 	/////////////////////////
 
 	Pivoter pivoter(cloud, ballRadius);
@@ -149,5 +162,11 @@ int main(int _argn, char **_argv)
 
 	double elapsedTime = (double) (end - begin) / CLOCKS_PER_SEC;
 	std::cout << "Finished in " << std::setprecision(5) << std::fixed << elapsedTime << " [s]\n";
+
+//	std::ofstream times;
+//	times.open("./times", std::fstream::app);
+//	times << inputFile << " " << ballRadius << " " << elapsedTime << std::endl;
+//	times.close();
+
 	return EXIT_SUCCESS;
 }

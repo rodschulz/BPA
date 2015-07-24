@@ -253,10 +253,10 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 	Eigen::Vector3f v20 = p2 - p0;
 	Eigen::Vector3f normal = v10.cross(v20);
 
-// Calculate ball center only if points are not collinear
+	// Calculate ball center only if points are not collinear
 	if (normal.norm() > COMPARISON_EPSILON)
 	{
-// Normalize to avoid precision errors while checking the orientation
+		// Normalize to avoid precision errors while checking the orientation
 		normal.normalize();
 		if (!Helper::isOriented(normal, (Eigen::Vector3f) cloud->at(_index0).getNormalVector3fMap(), (Eigen::Vector3f) cloud->at(_index1).getNormalVector3fMap(), (Eigen::Vector3f) cloud->at(_index2).getNormalVector3fMap()))
 		{

@@ -4,9 +4,9 @@ type=$1
 
 if [ -d "./build" ]; then
 	rm -rf ./build
-	mkdir ./build/
 fi
 
+mkdir ./build/
 cd ./build/
 
 if [ "$type" == "-r" ] ; then
