@@ -32,6 +32,7 @@ public:
 
 	static double getBallRadius();
 	static bool drawSpheres();
+	static bool useGPU();
 
 private:
 	Config();
@@ -42,5 +43,6 @@ private:
 	DebugLevel level;
 	double radius;
 	bool spheres;
+	bool gpu;
 };
 

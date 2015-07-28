@@ -20,6 +20,7 @@ public:
 
 	std::pair<int, TrianglePtr> pivot(const EdgePtr &_edge);
 	TrianglePtr findSeed();
+	TrianglePtr findSeedGPU();
 
 	inline pcl::PointNormal *getPoint(const int _index) const
 	{
@@ -34,6 +35,7 @@ public:
 	inline void setUsed(const int _index)
 	{
 		notUsed.erase(_index);
+		notUsedArray[_index] = false;
 	}
 
 private:
@@ -47,4 +49,6 @@ private:
 	pcl::PointCloud<pcl::PointNormal>::Ptr cloud;
 	std::map<int, bool> notUsed;
 	double ballRadius;
+
+	bool *notUsedArray;
 };

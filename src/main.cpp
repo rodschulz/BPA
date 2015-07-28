@@ -12,7 +12,7 @@
 #include "Pivoter.h"
 #include "Front.h"
 #include "Config.h"
-#include "CudaUtil.h"
+#include "GpuAlgorithms.h"
 
 int main(int _argn, char **_argv)
 {
@@ -92,16 +92,21 @@ int main(int _argn, char **_argv)
 //	}
 //	std::cout << std::setprecision(3) << "Acc CUDA: " << accCuda << " [ms]\nAcc PCL : " << accPCL << " [ms]" << std::endl;
 
-	int index = 70;
-	std::vector<int> indices;
-	std::vector<float> distances;
-	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
-	kdtree.setInputCloud(cloud);
-	kdtree.radiusSearch(cloud->at(index), ballRadius, indices, distances);
-	bool *notUsed = (bool *)calloc(cloud->size(), sizeof(bool));
-	CudaUtil::findSeed(cloud, indices, notUsed, index);
-
-	return EXIT_SUCCESS;
+//	int index = 0;
+//	std::vector<int> indices;
+//	std::vector<float> distances;
+//	pcl::KdTreeFLANN<pcl::PointNormal> kdtree;
+//	kdtree.setInputCloud(cloud);
+//	kdtree.radiusSearch(cloud->at(index), ballRadius, indices, distances);
+//	bool *notUsed = (bool *)calloc(cloud->size(), sizeof(bool));
+//	memset(notUsed, true, cloud->size() * sizeof(bool));
+//	CudaUtil::findSeed(cloud, indices, notUsed, index, ballRadius);
+//
+//	Pivoter pivoter2(cloud, ballRadius);
+//	TrianglePtr seed2;
+//	seed2 = pivoter2.findSeed();
+//
+//	return EXIT_SUCCESS;
 	/////////////////////////
 
 	Pivoter pivoter(cloud, ballRadius);
@@ -143,7 +148,7 @@ int main(int _argn, char **_argv)
 		// Find a new seed
 		TrianglePtr seed;
 		std::cout << "Searching a seed\n";
-		if ((seed = pivoter.findSeed()) != NULL)
+		if ((seed = (Config::useGPU() ? pivoter.findSeedGPU() : pivoter.findSeed())) != NULL)
 		{
 			mesh.push_back(seed);
 			front.addEdges(seed);
@@ -162,11 +167,6 @@ int main(int _argn, char **_argv)
 
 	double elapsedTime = (double) (end - begin) / CLOCKS_PER_SEC;
 	std::cout << "Finished in " << std::setprecision(5) << std::fixed << elapsedTime << " [s]\n";
-
-//	std::ofstream times;
-//	times.open("./times", std::fstream::app);
-//	times << inputFile << " " << ballRadius << " " << elapsedTime << std::endl;
-//	times.close();
 
 	return EXIT_SUCCESS;
 }

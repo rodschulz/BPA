@@ -17,6 +17,7 @@ Config::Config()
 	level = NONE;
 	radius = 0.002;
 	spheres = true;
+	gpu = false;
 }
 
 Config::~Config()
@@ -61,9 +62,9 @@ void Config::parse(const std::string _key, const std::string _value)
 			getInstance()->level = NONE;
 	}
 	else if (boost::iequals(_key, "drawSpheres"))
-	{
 		getInstance()->spheres = boost::iequals(_value, "true");
-	}
+	else if (boost::iequals(_key, "useGPU"))
+		getInstance()->gpu = boost::iequals(_value, "true");
 }
 
 double Config::getBallRadius()
@@ -74,4 +75,9 @@ double Config::getBallRadius()
 bool Config::drawSpheres()
 {
 	return getInstance()->spheres;
+}
+
+bool Config::useGPU()
+{
+	return getInstance()->gpu;
 }

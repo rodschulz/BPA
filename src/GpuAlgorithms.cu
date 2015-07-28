@@ -2,142 +2,17 @@
  * Author: rodrigo
  * 2015
  */
-#include "CudaUtil.h"
+#include "GpuAlgorithms.h"
 #include <ostream>
 #include <iostream>
-#include "UtilsGPU.h"
+#include "GpuUtils.h"
 
-#define COMPARISON_EPSILON	1E-8
-
-struct Point
-{
-	float x, y, z, w;
-	float nx, ny, nz, nw;
-	float c;
-	float fill[3];
-
-	__device__ Point operator+(const Point &_p) const
-	{
-		Point result;
-		result.x = x + _p.x;
-		result.y = y + _p.y;
-		result.z = z + _p.z;
-		return result;
-	}
-
-	__device__ Point operator-(const Point &_p) const
-	{
-		Point result;
-		result.x = x - _p.x;
-		result.y = y - _p.y;
-		result.z = z - _p.z;
-		return result;
-	}
-
-	__device__ Point operator*(const float _scalar) const
-	{
-		Point result;
-		result.x = x * _scalar;
-		result.y = y * _scalar;
-		result.z = z * _scalar;
-		return result;
-	}
-
-	__device__ float sqrDist(const Point &_p) const
-	{
-		float dx = x - _p.x;
-		float dy = y - _p.y;
-		float dz = z - _p.z;
-		return dx * dx + dy * dy + dz * dz;
-	}
-
-	__device__ float dist(const Point &_p) const
-	{
-		float dx = x - _p.x;
-		float dy = y - _p.y;
-		float dz = z - _p.z;
-		return sqrt(dx * dx + dy * dy + dz * dz);
-	}
-
-	__device__ Point cross(const Point &_p) const
-	{
-		Point result;
-		result.x = y * _p.z - z * _p.y;
-		result.x = z * _p.x - x * _p.z;
-		result.x = x * _p.y - y * _p.x;
-		return result;
-	}
-
-	__device__ float dot(const Point &_p) const
-	{
-		return (x * _p.x) + (y * _p.y) + (z * _p.z);
-	}
-
-	__device__ float normalDot(const Point &_p) const
-	{
-		return (nx * _p.x) + (ny * _p.y) + (nz * _p.z);
-	}
-
-	__device__ float sqrNorm() const
-	{
-		return x * x + y * y + z * z;
-	}
-
-	__device__ float norm() const
-	{
-		return sqrt(x * x + y * y + z * z);
-	}
-
-	__device__ void normalize()
-	{
-		float factor = 1 / sqrt(x * x + y * y + z * z);
-		x *= factor;
-		y *= factor;
-		z *= factor;
-	}
-};
-
-struct BallCenter
-{
-	float cx, cy, cz;
-	int idx0, idx1, idx2;
-	bool isValid;
-
-	__device__ __host__ BallCenter()
-	{
-		cx = cy = cz = 0;
-		idx0 = idx1 = idx2 = 0;
-		isValid = false;
-	}
-
-	__device__ BallCenter(const int _idx0, const int _idx1, const int _idx2)
-	{
-		idx0 = _idx0;
-		idx1 = _idx1;
-		idx2 = _idx2;
-		cx = cy = cz = 0;
-		isValid = false;
-	}
-
-	__device__ float sqrDist(const Point &_p) const
-	{
-		float dx = cx - _p.x;
-		float dy = cy - _p.y;
-		float dz = cz - _p.z;
-		return dx * dx + dy * dy + dz * dz;
-	}
-
-	__device__ void add(const Point &_p)
-	{
-		cx += _p.x;
-		cy += _p.y;
-		cz += _p.z;
-	}
-};
+#define EPSILON	1E-10
 
 // Pointers to memory in device
 Point *devPoints = NULL;
 bool *devNotUsed = NULL;
+BallCenter *auxPtr = NULL;
 
 // Global variable in device
 __device__ int devFound;
@@ -149,24 +24,15 @@ std::ostream &operator<<(std::ostream &_stream, const BallCenter &_center)
 	return _stream;
 }
 
-void CudaUtil::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
+void GpuAlgorithms::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
-	size_t cloudBytes = sizeof(pcl::PointNormal) * _cloud->size();
-	cudaMalloc((void **) &devPoints, cloudBytes);
-	cudaCheckErrors("cudaMalloc points failed");
-
-	cudaMemcpy(devPoints, &_cloud->points[0], cloudBytes, cudaMemcpyHostToDevice);
-	cudaCheckErrors("cudaMemcpy points to dev failed");
+	Point *hostPoints = (Point *) &_cloud->points[0];
+	GpuUtils::createInDev<Point>(&devPoints, hostPoints, _cloud->size());
 }
 
-void CudaUtil::allocUsed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const bool* _notUsed)
+void GpuAlgorithms::allocUsed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const bool* _notUsed)
 {
-	size_t bytes = sizeof(bool) * _cloud->size();
-	cudaMalloc((void **) &devNotUsed, bytes);
-	cudaCheckErrors("cudaMalloc notUsed failed");
-
-	cudaMemset(devNotUsed, 0, bytes);
-	cudaCheckErrors("cudaMemset notUsed failed");
+	GpuUtils::createInDev<bool>(&devNotUsed, _notUsed, _cloud->size());
 }
 
 __global__ void searchCloserPoints(const int _target, const Point *_points, const int _pointNumber, const double _searchRadius, const int _pointsPerThread, bool *_selected)
@@ -180,7 +46,7 @@ __global__ void searchCloserPoints(const int _target, const Point *_points, cons
 	}
 }
 
-bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int _target, double _radius, std::vector<int> &_idxs)
+bool GpuAlgorithms::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int _target, double _radius, std::vector<int> &_idxs)
 {
 	int blocks = 10;
 	int threads = 256;
@@ -193,7 +59,7 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 	// Array to store points within radius
 	bool *devSelected;
 	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
-	cudaCheckErrors("cudaMalloc selected failed");
+	checkErrors("cudaMalloc selected failed");
 
 	// Calculate adequate number of blocks and threads
 	while (cloudSize / blocks < 2)
@@ -210,9 +76,9 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 	// Copy data to host
 	bool *selected = (bool *) calloc(cloudSize, sizeof(bool));
 	cudaMemcpy(selected, devSelected, sizeof(bool) * cloudSize, cudaMemcpyDeviceToHost);
-	cudaCheckErrors("cudaMemcpy selected failed");
+	checkErrors("cudaMemcpy selected failed");
 	//cudaFree(devSelected);
-	//cudaCheckErrors("cudaFree selected failed");
+	//checkErrors("cudaFree selected failed");
 
 	for (size_t i = 0; i < cloudSize; i++)
 		if (selected[i])
@@ -224,12 +90,12 @@ bool CudaUtil::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud
 }
 
 ///////////////////////////////
-__device__ bool isOriented(const Point &_normal, const Point &_p0, const Point &_p1, const Point &_p2)
+__device__ bool isOriented(const Point *_normal, const Point *_p0, const Point *_p1, const Point *_p2)
 {
 	int count = 0;
-	count = _p0.normalDot(_normal) < 0 ? count + 1 : count;
-	count = _p1.normalDot(_normal) < 0 ? count + 1 : count;
-	count = _p2.normalDot(_normal) < 0 ? count + 1 : count;
+	count = _p0->normalDot(*_normal) < 0 ? count + 1 : count;
+	count = _p1->normalDot(*_normal) < 0 ? count + 1 : count;
+	count = _p2->normalDot(*_normal) < 0 ? count + 1 : count;
 
 	return count <= 1;
 }
@@ -278,11 +144,11 @@ __device__ bool getBallCenter(const Point *_point0, const Point *_point1, const 
 	Point normal = v10.cross(v20);
 
 	// Calculate ball center only if points are not collinear
-	if (normal.sqrNorm() > COMPARISON_EPSILON)
+	if (normal.norm() > EPSILON)
 	{
 		// Normalize to avoid precision errors while checking the orientation
 		normal.normalize();
-		if (!isOriented(normal, *p0, *p1, *p2))
+		if (!isOriented(&normal, p0, p1, p2))
 		{
 			// Wrong orientation, swap vertices to get a CCW oriented triangle so face's normal pointing upwards
 			int aux = _center->idx0;
@@ -315,27 +181,26 @@ __device__ bool getBallCenter(const Point *_point0, const Point *_point1, const 
 
 __device__ bool isEmpty(const BallCenter *_center, const Point *_points, const int _pointNumber, const float _ballRadius)
 {
-	bool empty = true;
-	for (int i = 0; i < _pointNumber && empty; i++)
+	for (int i = 0; i < _pointNumber; i++)
 	{
-		if (_center->sqrDist(_points[i]) < _ballRadius)
-			empty = false;
+		if ((i == _center->idx0) || (i == _center->idx1) || (i == _center->idx2))
+			continue;
+
+		if (_center->dist(_points[i]) >= _ballRadius)
+			continue;
+
+		return false;
 	}
-	return empty;
+
+	return true;
 }
 
-__global__ void checkForSeeds(const Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0)
+__global__ void checkForSeeds(const Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0, const float _ballRadius)
 {
 	int startIdx = threadIdx.x;
+	startIdx = 0;
 	int endIdx = startIdx + 1;
-	float _ballRadius = 0.005;
-
-	devCenter->cy = devFound;
-	devFound = devCenter->cx;
-	devCenter->idx0 = _neighbors[0];
-	devCenter->idx1 = _neighbors[1];
-	devCenter->idx2 = _neighbors[2];
-	devCenter->isValid = true;
+	endIdx = _neighborsSize;
 
 	for (int j = startIdx; j < endIdx && j < _neighborsSize; j++)
 	{
@@ -380,10 +245,10 @@ __global__ void checkForSeeds(const Point *_points, const int _pointNumber, cons
 	}
 }
 
-bool CudaUtil::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0)
+BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius)
 {
 	int blocks = 1;
-	int threads = _neighbors.size();
+	int threads = 1;	//_neighbors.size();
 	size_t cloudSize = _cloud->size();
 
 	// Prepare memory buffers
@@ -394,38 +259,34 @@ bool CudaUtil::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, co
 
 	// Copy not used data to dev
 	size_t notUsedBytes = sizeof(bool) * _cloud->size();
-	cudaMemcpy(devNotUsed, _notUsed, notUsedBytes, cudaMemcpyHostToDevice);
-	cudaCheckErrors("cudaMemcpy notUsed to dev failed");
+	GpuUtils::setData<bool>(&devNotUsed, _notUsed, _cloud->size());
 
 	// Create and prepare buffer with neighbors indices
 	int *devNeighbors;
-	UtilsGPU::createInDev<int>(&devNeighbors, &_neighbors[0], _neighbors.size());
+	GpuUtils::createInDev<int>(&devNeighbors, &_neighbors[0], _neighbors.size());
 
 	// Prepare global variable 'devFound'
-	int found = 7;
-	UtilsGPU::setSymbol<int>(devFound, &found);
+	int found = 0;
+	GpuUtils::setSymbol<int>(devFound, &found);
 
 	// Prepare global variable 'devFoundCenter'
-	BallCenter *center = new BallCenter();
-	center->cx = 1313;
-	BallCenter *auxPtr;
-	UtilsGPU::createInDev<BallCenter>(&auxPtr, center, 1);
-	UtilsGPU::setSymbol<BallCenter *>(devCenter, &auxPtr);
+	BallCenter center = BallCenter();
+	if (auxPtr == NULL)
+		GpuUtils::createInDev<BallCenter>(&auxPtr, &center, 1);
+	GpuUtils::setData<BallCenter>(&auxPtr, &center, 1);
+	GpuUtils::setSymbol<BallCenter *>(devCenter, &auxPtr);
 
 	// Execute kernel
-	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, _neighbors.size(), devNotUsed, _index0);
+	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, _neighbors.size(), devNotUsed, _index0, _ballRadius);
 
 	// Retrieve results
 	cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
-	cudaCheckErrors("cudaMemcpyFromSymbol devFound failed");
-	cudaMemcpy(center, auxPtr, sizeof(BallCenter), cudaMemcpyDeviceToHost);
-	cudaCheckErrors("cudaMemcpy auxPtr failed");
+	checkErrors("cudaMemcpyFromSymbol failed");
+	GpuUtils::getData<BallCenter>(&center, auxPtr, 1);
 
 	// Free allocated memory
-	cudaFree(devNotUsed);
-	cudaCheckErrors("cudaFree devNotUsed failed");
 	cudaFree(devNeighbors);
-	cudaCheckErrors("cudaFree devNeighbors failed");
+	checkErrors("cudaFree devNeighbors failed");
 
-	return true;
+	return center;
 }

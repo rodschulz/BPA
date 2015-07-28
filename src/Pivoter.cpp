@@ -5,6 +5,7 @@
 #include "Pivoter.h"
 #include "Writer.h"
 #include "Config.h"
+#include "GpuAlgorithms.h"
 
 #define IN_BALL_THRESHOLD	1e-7
 
@@ -14,8 +15,12 @@ Pivoter::Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const dou
 	ballRadius = _ballRadius;
 	kdtree.setInputCloud(cloud);
 
+	notUsedArray = new bool[_cloud->size()];
 	for (size_t i = 0; i < _cloud->size(); i++)
-		notUsed[i] = false;
+	{
+		notUsed[i] = true;
+		notUsedArray[i] = true;
+	}
 }
 
 Pivoter::~Pivoter()
@@ -152,7 +157,7 @@ TrianglePtr Pivoter::findSeed()
 			continue;
 
 		// Look for a valid seed
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (size_t j = 0; j < indices.size(); j++)
 		{
 			if (!found)
@@ -174,7 +179,7 @@ TrianglePtr Pivoter::findSeed()
 
 					if (tested.find(code) != tested.end() || index1 == index2 || index2 == index0 || notUsed.find(index2) == notUsed.end())
 						continue;
-#pragma omp critical
+//#pragma omp critical
 					{
 						tested[code] = true;
 					}
@@ -190,21 +195,20 @@ TrianglePtr Pivoter::findSeed()
 						std::vector<int> neighborhood = getNeighbors(ballCenter, ballRadius);
 						if (!found && isEmpty(neighborhood, index0, index1, index2, center))
 						{
-#pragma omp critical
+//#pragma omp critical
 							{
 								if (!found)
 								{
 									std::cout << "\tSeed found (" << sequence[0] << ", " << sequence[1] << ", " << sequence[2] << ")\n";
 
 									seed = TrianglePtr(new Triangle(cloud->at((int) sequence[0]), cloud->at((int) sequence[1]), cloud->at((int) sequence[2]), sequence[0], sequence[1], sequence[2], ballCenter, ballRadius));
-									notUsed.erase(index0);
-									notUsed.erase(index1);
-									notUsed.erase(index2);
+									setUsed(index0);
+									setUsed(index1);
+									setUsed(index2);
 
 									found = true;
 								}
 							}
-							//return seed;
 						}
 					}
 				}
@@ -285,9 +289,7 @@ bool Pivoter::getBallCenter(const int _index0, const int _index1, const int _ind
 
 bool Pivoter::isEmpty(const std::vector<int> &_data, const int _index0, const int _index1, const int _index2, const Eigen::Vector3f &_ballCenter) const
 {
-//	if (_data.size() > 3)
-//		return false;
-// TODO make this a little faster by making the query to the cloud here and using the distances already given by the query
+	// TODO make this a little faster by making the query to the cloud here and using the distances already given by the query
 	if (_data.empty())
 		return true;
 
@@ -297,7 +299,7 @@ bool Pivoter::isEmpty(const std::vector<int> &_data, const int _index0, const in
 			continue;
 
 		Eigen::Vector3f dist = cloud->at(_data[i]).getVector3fMap() - _ballCenter;
-		if (fabs(dist.norm() - ballRadius) < IN_BALL_THRESHOLD)
+		if (std::fabs(dist.norm() - ballRadius) < IN_BALL_THRESHOLD)
 			continue;
 
 		return false;
@@ -312,4 +314,39 @@ std::vector<int> Pivoter::getNeighbors(const pcl::PointNormal &_point, const dou
 	std::vector<float> distances;
 	kdtree.radiusSearch(_point, _radius, indices, distances);
 	return indices;
+}
+
+TrianglePtr Pivoter::findSeedGPU()
+{
+	double neighborhoodSize = 1.3;
+
+	TrianglePtr seed;
+	bool found = false;
+	std::map<unsigned long, bool> tested;
+	std::cout << "Remaining points " << notUsed.size() << std::endl;
+
+	for (std::map<int, bool>::iterator it = notUsed.begin(); it != notUsed.end() && !found; it++)
+	{
+		int index0 = it->first;
+
+		// Get the point's neighborhood
+		std::vector<int> indices = getNeighbors(cloud->at(index0), ballRadius * neighborhoodSize);
+		if (indices.size() < 3)
+			continue;
+
+		// Look for a valid seed
+		BallCenter center = GpuAlgorithms::findSeed(cloud, indices, notUsedArray, index0, ballRadius);
+
+		if (center.isValid)
+		{
+			pcl::PointNormal ballCenter = Helper::makePointNormal(center.cx, center.cy, center.cz);
+			seed = TrianglePtr(new Triangle(cloud->at(center.idx0), cloud->at(center.idx1), cloud->at(center.idx2), center.idx0, center.idx1, center.idx2, ballCenter, ballRadius));
+			setUsed(center.idx0);
+			setUsed(center.idx1);
+			setUsed(center.idx2);
+			break;
+		}
+	}
+
+	return seed;
 }
