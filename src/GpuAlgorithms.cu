@@ -17,6 +17,7 @@ BallCenter *auxPtr = NULL;
 // Global variable in device
 __device__ int devFound;
 __device__ BallCenter *devCenter;
+__device__ Point *devPointDbg;
 
 std::ostream &operator<<(std::ostream &_stream, const BallCenter &_center)
 {
@@ -198,9 +199,7 @@ __device__ bool isEmpty(const BallCenter *_center, const Point *_points, const i
 __global__ void checkForSeeds(const Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0, const float _ballRadius)
 {
 	int startIdx = threadIdx.x;
-	startIdx = 0;
 	int endIdx = startIdx + 1;
-	endIdx = _neighborsSize;
 
 	for (int j = startIdx; j < endIdx && j < _neighborsSize; j++)
 	{
@@ -248,7 +247,7 @@ __global__ void checkForSeeds(const Point *_points, const int _pointNumber, cons
 BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius)
 {
 	int blocks = 1;
-	int threads = 1;	//_neighbors.size();
+	int threads = _neighbors.size();
 	size_t cloudSize = _cloud->size();
 
 	// Prepare memory buffers
@@ -279,9 +278,11 @@ BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr 
 	// Execute kernel
 	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, _neighbors.size(), devNotUsed, _index0, _ballRadius);
 
+	// Retrieve found status (just for debug)
+	//cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
+	//checkErrors("cudaMemcpyFromSymbol failed");
+
 	// Retrieve results
-	cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
-	checkErrors("cudaMemcpyFromSymbol failed");
 	GpuUtils::getData<BallCenter>(&center, auxPtr, 1);
 
 	// Free allocated memory

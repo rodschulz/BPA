@@ -60,8 +60,8 @@ struct Point
 	{
 		Point result;
 		result.x = y * _p.z - z * _p.y;
-		result.x = z * _p.x - x * _p.z;
-		result.x = x * _p.y - y * _p.x;
+		result.y = z * _p.x - x * _p.z;
+		result.z = x * _p.y - y * _p.x;
 		return result;
 	}
 
