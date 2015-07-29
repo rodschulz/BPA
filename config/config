@@ -1,4 +1,4 @@
 ballRadius	0.005
-useGPU		true
-debug 		none
+useGPU		false
+debug 		false
 drawSpheres	false

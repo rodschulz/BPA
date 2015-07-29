@@ -7,7 +7,9 @@
 #include <iostream>
 #include "GpuUtils.h"
 
-#define EPSILON	1E-10
+#define EPSILON		1E-10
+#define MAX_BLOCKS	65535
+#define MAX_THREADS	1024
 
 // Pointers to memory in device
 Point *devPoints = NULL;
@@ -196,12 +198,15 @@ __device__ bool isEmpty(const BallCenter *_center, const Point *_points, const i
 	return true;
 }
 
-__global__ void checkForSeeds(const Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0, const float _ballRadius)
+__global__ void checkForSeeds(const Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0, const float _ballRadius, const int _neighborsPerThread)
 {
-	int startIdx = threadIdx.x;
-	int endIdx = startIdx + 1;
+	int start0 = blockIdx.x;
+	int end0 = start0 + 1;
 
-	for (int j = startIdx; j < endIdx && j < _neighborsSize; j++)
+	int start1 = threadIdx.x * _neighborsPerThread;
+	int end1 = start1 + _neighborsPerThread;
+
+	for (int j = start0; j < end0 && j < _neighborsSize; j++)
 	{
 		if (devFound == 0)
 		{
@@ -211,7 +216,8 @@ __global__ void checkForSeeds(const Point *_points, const int _pointNumber, cons
 			if (index1 == _index0 || !_notUsed[index1])
 				continue;
 
-			for (size_t k = 0; k < _neighborsSize && devFound == 0; k++)
+			//for (size_t k = 0; k < _neighborsSize && devFound == 0; k++)
+			for (size_t k = start1; k < end1 && k < _neighborsSize && devFound == 0; k++)
 			{
 				int index2 = _neighbors[k];
 
@@ -246,8 +252,17 @@ __global__ void checkForSeeds(const Point *_points, const int _pointNumber, cons
 
 BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius)
 {
-	int blocks = 1;
-	int threads = _neighbors.size();
+	size_t neighborsSize = _neighbors.size();
+	if (neighborsSize > MAX_BLOCKS)
+	{
+		std::cout << "ERROR: radius size too big" << std::endl;
+		exit(1);
+	}
+
+	int blocks = neighborsSize < MAX_BLOCKS ? neighborsSize : MAX_BLOCKS;
+	int threads = neighborsSize < MAX_THREADS ? neighborsSize : MAX_THREADS;
+	int neighborsPerThread = ceil((double)neighborsSize / threads);
+
 	size_t cloudSize = _cloud->size();
 
 	// Prepare memory buffers
@@ -262,7 +277,7 @@ BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr 
 
 	// Create and prepare buffer with neighbors indices
 	int *devNeighbors;
-	GpuUtils::createInDev<int>(&devNeighbors, &_neighbors[0], _neighbors.size());
+	GpuUtils::createInDev<int>(&devNeighbors, &_neighbors[0], neighborsSize);
 
 	// Prepare global variable 'devFound'
 	int found = 0;
@@ -276,7 +291,7 @@ BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr 
 	GpuUtils::setSymbol<BallCenter *>(devCenter, &auxPtr);
 
 	// Execute kernel
-	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, _neighbors.size(), devNotUsed, _index0, _ballRadius);
+	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, neighborsSize, devNotUsed, _index0, _ballRadius, neighborsPerThread);
 
 	// Retrieve found status (just for debug)
 	//cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
