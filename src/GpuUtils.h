@@ -55,6 +55,15 @@ public:
 		checkErrors("cudaMemcpyToSymbol failed");
 	}
 
+	template<class T>
+	static inline void allocMemory(T **_devDst, const int _size)
+	{
+		size_t bytes = sizeof(T) * _size;
+
+		cudaMalloc((void **) _devDst, bytes);
+		checkErrors("cudaMalloc failed");
+	}
+
 	static size_t getAvailableMemory()
 	{
 		size_t freeMem, totalMem;

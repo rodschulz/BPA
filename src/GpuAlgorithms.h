@@ -14,8 +14,8 @@ class GpuAlgorithms
 public:
 	static bool calculateBallCenters(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud);
 	static bool radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int target, double _radius, std::vector<int> &_idxs);
-	static BallCenter findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius);
-
+	static gpu::BallCenter findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius, const gpu::DeviceKDTree &_kdtree);
+	static gpu::DeviceKDTree buildKDTree(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud);
 private:
 	GpuAlgorithms()
 	{

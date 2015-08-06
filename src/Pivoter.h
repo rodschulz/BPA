@@ -11,6 +11,7 @@
 #include "Edge.h"
 #include "Helper.h"
 #include "Triangle.h"
+#include "GpuAlgorithms.h"
 
 class Pivoter
 {
@@ -51,4 +52,5 @@ private:
 	double ballRadius;
 
 	bool *notUsedArray;
+	gpu::DeviceKDTree gpuKDTree;
 };

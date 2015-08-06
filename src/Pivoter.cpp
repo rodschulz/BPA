@@ -5,7 +5,6 @@
 #include "Pivoter.h"
 #include "Writer.h"
 #include "Config.h"
-#include "GpuAlgorithms.h"
 
 #define IN_BALL_THRESHOLD	1e-7
 
@@ -14,6 +13,7 @@ Pivoter::Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const dou
 	cloud = _cloud;
 	ballRadius = _ballRadius;
 	kdtree.setInputCloud(cloud);
+	gpuKDTree = GpuAlgorithms::buildKDTree(_cloud);
 
 	notUsedArray = new bool[_cloud->size()];
 	for (size_t i = 0; i < _cloud->size(); i++)
@@ -335,7 +335,7 @@ TrianglePtr Pivoter::findSeedGPU()
 			continue;
 
 		// Look for a valid seed
-		BallCenter center = GpuAlgorithms::findSeed(cloud, indices, notUsedArray, index0, ballRadius);
+		gpu::BallCenter center = GpuAlgorithms::findSeed(cloud, indices, notUsedArray, index0, ballRadius, gpuKDTree);
 
 		if (center.isValid)
 		{
