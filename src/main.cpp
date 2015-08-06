@@ -12,7 +12,7 @@
 #include "Pivoter.h"
 #include "Front.h"
 #include "Config.h"
-#include "GpuAlgorithms.h"
+#include "GpuRoutines.h"
 
 int main(int _argn, char **_argv)
 {

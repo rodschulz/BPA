@@ -2,7 +2,8 @@
  * Author: rodrigo
  * 2015
  */
-#include "GpuAlgorithms.h"
+#include "GpuRoutines.h"
+
 #include <ostream>
 #include <iostream>
 #include "GpuUtils.h"
@@ -12,20 +13,23 @@
 #define MAX_THREADS	1024
 
 // Pointers to memory in device
-gpu::Point *devPoints = NULL;
 bool *devNotUsed = NULL;
-gpu::BallCenter *auxPtr = NULL;
+int *devSearchResults = NULL;
+gpu::Point *devPoints = NULL;
 gpu::DeviceNode *devNodes = NULL;
+gpu::BallCenter *devAuxCenter = NULL;
+gpu::DeviceKDTree *devAuxTree = NULL;
 
 // Global variable in device
-__device__ int devFound;
 __device__ gpu::BallCenter *devCenter;
-__device__ gpu::Point *devPointDbg;
+__device__ gpu::DeviceKDTree *devKDTree;
 
 // Debug variables
-__device__ int kdtreeSize;
-__device__ gpu::DeviceNode *rootNode;
-__device__ gpu::DeviceNode *rightChild;
+__device__ int devFound;
+__device__ int devTreeSize;
+__device__ int devTreeRoot;
+__device__ int devLeftChild;
+__device__ int devRightChild;
 
 std::ostream &operator<<(std::ostream &_stream, const gpu::BallCenter &_center)
 {
@@ -33,72 +37,17 @@ std::ostream &operator<<(std::ostream &_stream, const gpu::BallCenter &_center)
 	return _stream;
 }
 
-void GpuAlgorithms::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
+void GpuRoutines::allocPoints(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
 	gpu::Point *hostPoints = (gpu::Point *) &_cloud->points[0];
 	GpuUtils::createInDev<gpu::Point>(&devPoints, hostPoints, _cloud->size());
 }
 
-void GpuAlgorithms::allocUsed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const bool* _notUsed)
+void GpuRoutines::allocUsed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const bool* _notUsed)
 {
 	GpuUtils::createInDev<bool>(&devNotUsed, _notUsed, _cloud->size());
 }
 
-//__global__ void searchCloserPoints(const int _target, const gpu::Point *_points, const int _pointNumber, const double _searchRadius, const int _pointsPerThread, bool *_selected)
-//{
-//	int startIdx = (blockIdx.x * blockDim.x + threadIdx.x) * _pointsPerThread;
-//	double sqrRadius = _searchRadius * _searchRadius;
-//
-//	for (int i = startIdx; i < startIdx + _pointsPerThread && i < _pointNumber; i++)
-//	{
-//		_selected[i] = _points[_target].sqrDist(_points[i]) < sqrRadius;
-//	}
-//}
-//
-//bool GpuAlgorithms::radiusSearch(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const int _target, double _radius, std::vector<int> &_idxs)
-//{
-//	int blocks = 10;
-//	int threads = 256;
-//	size_t cloudSize = _cloud->size();
-//
-//	// Copy points to device
-//	if (devPoints == NULL)
-//		allocPoints(_cloud);
-//
-//	// Array to store points within radius
-//	bool *devSelected;
-//	cudaMalloc((void **) &devSelected, sizeof(bool) * cloudSize);
-//	checkErrors("cudaMalloc selected failed");
-//
-//	// Calculate adequate number of blocks and threads
-//	while (cloudSize / blocks < 2)
-//		blocks /= 2;
-//	int pointsPerBlock = ceil((double) cloudSize / blocks);
-//
-//	while (pointsPerBlock / threads < 1)
-//		threads /= 2;
-//	int pointsPerThread = ceil((double) pointsPerBlock / threads);
-//
-//	// Execute kernel
-//	searchCloserPoints<<<blocks, threads>>>(_target, devPoints, cloudSize, _radius, pointsPerThread, devSelected);
-//
-//	// Copy data to host
-//	bool *selected = (bool *) calloc(cloudSize, sizeof(bool));
-//	cudaMemcpy(selected, devSelected, sizeof(bool) * cloudSize, cudaMemcpyDeviceToHost);
-//	checkErrors("cudaMemcpy selected failed");
-//	//cudaFree(devSelected);
-//	//checkErrors("cudaFree selected failed");
-//
-//	for (size_t i = 0; i < cloudSize; i++)
-//		if (selected[i])
-//			_idxs.push_back(i);
-//
-//	free(selected);
-//
-//	return true;
-//}
-
-///////////////////////////////
 __device__ bool isOriented(const gpu::Point *_normal, const gpu::Point *_p0, const gpu::Point *_p1, const gpu::Point *_p2)
 {
 	int count = 0;
@@ -204,8 +153,14 @@ __device__ bool isEmpty(const gpu::BallCenter *_center, const gpu::Point *_point
 	return true;
 }
 
-__global__ void checkForSeeds(const gpu::Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0, const float _ballRadius, const int _neighborsPerThread, const gpu::DeviceKDTree &_kdtree)
+__global__ void checkForSeeds(const gpu::Point *_points, const int _pointNumber, const int *_neighbors, const int _neighborsSize, const bool *_notUsed, const int _index0, const float _ballRadius, const int _neighborsPerThread)
 {
+	///// Assign debug variables /////
+	/*devTreeSize = devKDTree->size;
+	 devTreeRoot = devKDTree->root;
+	 devLeftChild = devKDTree->nodes[devKDTree->root].left;
+	 devRightChild = devKDTree->nodes[devKDTree->root].right;*/
+	//////////////////////////////////
 	int start0 = blockIdx.x;
 	int end0 = start0 + 1;
 
@@ -255,7 +210,7 @@ __global__ void checkForSeeds(const gpu::Point *_points, const int _pointNumber,
 	}
 }
 
-gpu::BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius, const gpu::DeviceKDTree &_kdtree)
+gpu::BallCenter GpuRoutines::findSeed(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const std::vector<int> &_neighbors, const bool *_notUsed, const int _index0, const float _ballRadius)
 {
 	size_t neighborsSize = _neighbors.size();
 	if (neighborsSize > MAX_BLOCKS)
@@ -290,20 +245,36 @@ gpu::BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>:
 
 	// Prepare global variable 'devFoundCenter'
 	gpu::BallCenter center = gpu::BallCenter();
-	if (auxPtr == NULL)
-		GpuUtils::createInDev<gpu::BallCenter>(&auxPtr, &center, 1);
-	GpuUtils::setData<gpu::BallCenter>(&auxPtr, &center, 1);
-	GpuUtils::setSymbol<gpu::BallCenter *>(devCenter, &auxPtr);
+	if (devAuxCenter == NULL)
+		GpuUtils::createInDev<gpu::BallCenter>(&devAuxCenter, &center, 1);
+	GpuUtils::setData<gpu::BallCenter>(&devAuxCenter, &center, 1);
+	GpuUtils::setSymbol<gpu::BallCenter *>(devCenter, &devAuxCenter);
 
 	// Execute kernel
-	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, neighborsSize, devNotUsed, _index0, _ballRadius, neighborsPerThread, _kdtree);
+	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, neighborsSize, devNotUsed, _index0, _ballRadius, neighborsPerThread);
 
-	// Retrieve found status (just for debug)
-	//cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
-	//checkErrors("cudaMemcpyFromSymbol failed");
+	///// Retrieve debug variables /////
+	/*cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
+	 checkErrors("cudaMemcpyFromSymbol failed");
 
+	 int treeSize = -1;
+	 cudaMemcpyFromSymbol(&treeSize, devTreeSize, sizeof(int));
+	 checkErrors("cudaMemcpyFromSymbol failed");
+
+	 int treeRoot = -5;
+	 cudaMemcpyFromSymbol(&treeRoot, devTreeRoot, sizeof(int));
+	 checkErrors("cudaMemcpyFromSymbol failed");
+
+	 int leftChild = -5;
+	 cudaMemcpyFromSymbol(&leftChild, devLeftChild, sizeof(int));
+	 checkErrors("cudaMemcpyFromSymbol failed");
+
+	 int rightChild = -5;
+	 cudaMemcpyFromSymbol(&rightChild, devRightChild, sizeof(int));
+	 checkErrors("cudaMemcpyFromSymbol failed");*/
+	////////////////////////////////////
 	// Retrieve results
-	GpuUtils::getData<gpu::BallCenter>(&center, auxPtr, 1);
+	GpuUtils::getData<gpu::BallCenter>(&center, devAuxCenter, 1);
 
 	// Free allocated memory
 	cudaFree(devNeighbors);
@@ -312,21 +283,45 @@ gpu::BallCenter GpuAlgorithms::findSeed(const pcl::PointCloud<pcl::PointNormal>:
 	return center;
 }
 
-gpu::DeviceKDTree GpuAlgorithms::buildKDTree(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
+void GpuRoutines::buildInDeviceKDTree(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud)
 {
 	// Build a KDTree using host memory
 	gpu::HostKDTree tree = gpu::HostKDTree((const gpu::Point *) &_cloud->points[0]);
 	for (size_t i = 0; i < _cloud->size(); i++)
 		tree.insert((gpu::Point *) &_cloud->points[i], i);
 
+	// Get the serialized version of the tree
+	gpu::DeviceNode *hostMem = new gpu::DeviceNode[tree.size];
+	tree.getSerializedRepresentation(hostMem);
+
 	// Allocate cloud data if it has not already been done
 	if (devPoints == NULL)
 		allocPoints(_cloud);
 
-	// Allocate memory for tree's nodes
-	GpuUtils::allocMemory<gpu::DeviceNode>(&devNodes, tree.size);
-	// Build the tree on GPU
-	gpu::DeviceKDTree devTree = tree.buildDeviceTree(devNodes, devPoints);
+	// Allocate memory for tree's nodes and copy data
+	GpuUtils::createInDev<gpu::DeviceNode>(&devNodes, hostMem, tree.size);
+	// Allocate memory for search results
+	GpuUtils::allocMemory<int>(&devSearchResults, tree.size);
 
-	return devTree;
+	// Create the serialized tree
+	gpu::DeviceKDTree serializedTree = gpu::DeviceKDTree();
+	serializedTree.root = 0;
+	serializedTree.size = tree.size;
+	serializedTree.nodes = devNodes;
+	serializedTree.points = devPoints;
+	serializedTree.result = devSearchResults;
+
+	// Allocate memory for the tree itself
+	GpuUtils::createInDev<gpu::DeviceKDTree>(&devAuxTree, &serializedTree, 1);
+	GpuUtils::setSymbol<gpu::DeviceKDTree *>(devKDTree, &devAuxTree);
+}
+
+void GpuRoutines::releaseMemory()
+{
+	cudaFree(devNotUsed);
+	cudaFree(devSearchResults);
+	cudaFree(devPoints);
+	cudaFree(devNodes);
+	cudaFree(devAuxCenter);
+	cudaFree(devAuxTree);
 }

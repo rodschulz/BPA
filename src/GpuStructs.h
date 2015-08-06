@@ -170,6 +170,7 @@ namespace gpu
 	{
 		const Point *points;
 		DeviceNode *nodes;
+		int *result;
 		int size;
 		int root;
 
@@ -177,6 +178,7 @@ namespace gpu
 		{
 			points = NULL;
 			nodes = NULL;
+			result = NULL;
 			size = 0;
 			root = -1;
 		}
@@ -220,6 +222,12 @@ namespace gpu
 		void insert(const Point *_point, const int _index)
 		{
 			insert(&root, _point, _index, 0);
+		}
+
+		void getSerializedRepresentation(DeviceNode *_destination)
+		{
+			int startIndex = 0;
+			buildDeviceTree(root, _destination, startIndex);
 		}
 
 		DeviceKDTree buildDeviceTree(DeviceNode *_devNodesMem, const Point *_devPointsMem)

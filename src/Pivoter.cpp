@@ -13,7 +13,7 @@ Pivoter::Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const dou
 	cloud = _cloud;
 	ballRadius = _ballRadius;
 	kdtree.setInputCloud(cloud);
-	gpuKDTree = GpuAlgorithms::buildKDTree(_cloud);
+	GpuRoutines::buildInDeviceKDTree(_cloud);
 
 	notUsedArray = new bool[_cloud->size()];
 	for (size_t i = 0; i < _cloud->size(); i++)
@@ -25,6 +25,7 @@ Pivoter::Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const dou
 
 Pivoter::~Pivoter()
 {
+	GpuRoutines::releaseMemory();
 }
 
 std::pair<int, TrianglePtr> Pivoter::pivot(const EdgePtr &_edge)
@@ -335,7 +336,7 @@ TrianglePtr Pivoter::findSeedGPU()
 			continue;
 
 		// Look for a valid seed
-		gpu::BallCenter center = GpuAlgorithms::findSeed(cloud, indices, notUsedArray, index0, ballRadius, gpuKDTree);
+		gpu::BallCenter center = GpuRoutines::findSeed(cloud, indices, notUsedArray, index0, ballRadius);
 
 		if (center.isValid)
 		{

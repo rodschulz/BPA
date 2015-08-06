@@ -20,6 +20,23 @@
 class GpuUtils
 {
 public:
+	static size_t getAvailableMemory()
+	{
+		size_t freeMem, totalMem;
+		cudaMemGetInfo(&freeMem, &totalMem);
+		checkErrors("memInfo failed");
+		return freeMem;
+	}
+
+	template<class T>
+	static inline void allocMemory(T **_devDst, const int _size)
+	{
+		size_t bytes = sizeof(T) * _size;
+
+		cudaMalloc((void **) _devDst, bytes);
+		checkErrors("cudaMalloc failed");
+	}
+
 	template<class T>
 	static inline void createInDev(T **_devDst, const T *_hostSrc, const int _size)
 	{
@@ -49,27 +66,10 @@ public:
 	}
 
 	template<class T>
-	static inline void setSymbol(T &_devSymbol, T *_hostSrc)
+	static inline void setSymbol(T &_devSymbol, const T *_hostSrc)
 	{
 		cudaMemcpyToSymbol(_devSymbol, _hostSrc, sizeof(T));
 		checkErrors("cudaMemcpyToSymbol failed");
-	}
-
-	template<class T>
-	static inline void allocMemory(T **_devDst, const int _size)
-	{
-		size_t bytes = sizeof(T) * _size;
-
-		cudaMalloc((void **) _devDst, bytes);
-		checkErrors("cudaMalloc failed");
-	}
-
-	static size_t getAvailableMemory()
-	{
-		size_t freeMem, totalMem;
-		cudaMemGetInfo(&freeMem, &totalMem);
-		checkErrors("memInfo failed");
-		return freeMem;
 	}
 
 private:
