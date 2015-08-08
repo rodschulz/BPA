@@ -13,6 +13,8 @@ Pivoter::Pivoter(const pcl::PointCloud<pcl::PointNormal>::Ptr &_cloud, const dou
 	cloud = _cloud;
 	ballRadius = _ballRadius;
 	kdtree.setInputCloud(cloud);
+
+	GpuRoutines::prepareStackSize();
 	GpuRoutines::buildInDeviceKDTree(_cloud);
 
 	notUsedArray = new bool[_cloud->size()];

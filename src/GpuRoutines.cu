@@ -14,7 +14,6 @@
 
 // Pointers to memory in device
 bool *devNotUsed = NULL;
-int *devSearchResults = NULL;
 gpu::Point *devPoints = NULL;
 gpu::DeviceNode *devNodes = NULL;
 gpu::BallCenter *devAuxCenter = NULL;
@@ -188,8 +187,8 @@ __global__ void checkForSeeds(const gpu::Point *_points, const int _pointNumber,
 				gpu::BallCenter center(_index0, index1, index2);
 				if (getBallCenter(&_points[_index0], &_points[index1], &_points[index2], _ballRadius, &center))
 				{
-					//std::vector<int> neighborhood = getNeighbors(ballCenter, _ballRadius);
-					if (isEmpty(&center, _points, _pointNumber, _ballRadius))
+					//if (isEmpty(&center, _points, _pointNumber, _ballRadius))
+					if (devKDTree->isEmptyRadius(&center, _ballRadius))
 					{
 						if (devFound == 0)
 						{
@@ -246,7 +245,7 @@ gpu::BallCenter GpuRoutines::findSeed(const pcl::PointCloud<pcl::PointNormal>::P
 	// Prepare global variable 'devFoundCenter'
 	gpu::BallCenter center = gpu::BallCenter();
 	if (devAuxCenter == NULL)
-		GpuUtils::createInDev<gpu::BallCenter>(&devAuxCenter, &center, 1);
+		GpuUtils::allocMemory<gpu::BallCenter>(&devAuxCenter, 1);
 	GpuUtils::setData<gpu::BallCenter>(&devAuxCenter, &center, 1);
 	GpuUtils::setSymbol<gpu::BallCenter *>(devCenter, &devAuxCenter);
 
@@ -254,25 +253,26 @@ gpu::BallCenter GpuRoutines::findSeed(const pcl::PointCloud<pcl::PointNormal>::P
 	checkForSeeds<<<blocks, threads>>>(devPoints, _cloud->size(), devNeighbors, neighborsSize, devNotUsed, _index0, _ballRadius, neighborsPerThread);
 
 	///// Retrieve debug variables /////
-	/*cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
-	 checkErrors("cudaMemcpyFromSymbol failed");
-
-	 int treeSize = -1;
-	 cudaMemcpyFromSymbol(&treeSize, devTreeSize, sizeof(int));
-	 checkErrors("cudaMemcpyFromSymbol failed");
-
-	 int treeRoot = -5;
-	 cudaMemcpyFromSymbol(&treeRoot, devTreeRoot, sizeof(int));
-	 checkErrors("cudaMemcpyFromSymbol failed");
-
-	 int leftChild = -5;
-	 cudaMemcpyFromSymbol(&leftChild, devLeftChild, sizeof(int));
-	 checkErrors("cudaMemcpyFromSymbol failed");
-
-	 int rightChild = -5;
-	 cudaMemcpyFromSymbol(&rightChild, devRightChild, sizeof(int));
-	 checkErrors("cudaMemcpyFromSymbol failed");*/
+//	cudaMemcpyFromSymbol(&found, devFound, sizeof(int));
+//	checkErrors("cudaMemcpyFromSymbol failed");
+//
+//	 int treeSize = -1;
+//	 cudaMemcpyFromSymbol(&treeSize, devTreeSize, sizeof(int));
+//	 checkErrors("cudaMemcpyFromSymbol failed");
+//
+//	 int treeRoot = -5;
+//	 cudaMemcpyFromSymbol(&treeRoot, devTreeRoot, sizeof(int));
+//	 checkErrors("cudaMemcpyFromSymbol failed");
+//
+//	 int leftChild = -5;
+//	 cudaMemcpyFromSymbol(&leftChild, devLeftChild, sizeof(int));
+//	 checkErrors("cudaMemcpyFromSymbol failed");
+//
+//	 int rightChild = -5;
+//	 cudaMemcpyFromSymbol(&rightChild, devRightChild, sizeof(int));
+//	 checkErrors("cudaMemcpyFromSymbol failed");
 	////////////////////////////////////
+
 	// Retrieve results
 	GpuUtils::getData<gpu::BallCenter>(&center, devAuxCenter, 1);
 
@@ -290,6 +290,7 @@ void GpuRoutines::buildInDeviceKDTree(const pcl::PointCloud<pcl::PointNormal>::P
 	for (size_t i = 0; i < _cloud->size(); i++)
 		tree.insert((gpu::Point *) &_cloud->points[i], i);
 
+	//*
 	// Get the serialized version of the tree
 	gpu::DeviceNode *hostMem = new gpu::DeviceNode[tree.size];
 	tree.getSerializedRepresentation(hostMem);
@@ -300,8 +301,6 @@ void GpuRoutines::buildInDeviceKDTree(const pcl::PointCloud<pcl::PointNormal>::P
 
 	// Allocate memory for tree's nodes and copy data
 	GpuUtils::createInDev<gpu::DeviceNode>(&devNodes, hostMem, tree.size);
-	// Allocate memory for search results
-	GpuUtils::allocMemory<int>(&devSearchResults, tree.size);
 
 	// Create the serialized tree
 	gpu::DeviceKDTree serializedTree = gpu::DeviceKDTree();
@@ -309,19 +308,25 @@ void GpuRoutines::buildInDeviceKDTree(const pcl::PointCloud<pcl::PointNormal>::P
 	serializedTree.size = tree.size;
 	serializedTree.nodes = devNodes;
 	serializedTree.points = devPoints;
-	serializedTree.result = devSearchResults;
 
 	// Allocate memory for the tree itself
 	GpuUtils::createInDev<gpu::DeviceKDTree>(&devAuxTree, &serializedTree, 1);
 	GpuUtils::setSymbol<gpu::DeviceKDTree *>(devKDTree, &devAuxTree);
+	//*/
 }
 
 void GpuRoutines::releaseMemory()
 {
 	cudaFree(devNotUsed);
-	cudaFree(devSearchResults);
 	cudaFree(devPoints);
 	cudaFree(devNodes);
 	cudaFree(devAuxCenter);
 	cudaFree(devAuxTree);
+}
+
+void GpuRoutines::prepareStackSize()
+{
+	size_t sizeLimit = 1024 * 5;
+	cudaDeviceSetLimit(cudaLimitStackSize, sizeLimit);
+	checkErrors("cudaDeviceSetLimit failed");
 }

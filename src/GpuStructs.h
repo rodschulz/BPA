@@ -138,7 +138,7 @@ namespace gpu
 			return dx * dx + dy * dy + dz * dz;
 		}
 
-		__device__ float dist(const Point &_p) const
+		__device__ __host__ float dist(const Point &_p) const
 		{
 			float dx = cx - _p.x;
 			float dy = cy - _p.y;
@@ -170,7 +170,6 @@ namespace gpu
 	{
 		const Point *points;
 		DeviceNode *nodes;
-		int *result;
 		int size;
 		int root;
 
@@ -178,13 +177,62 @@ namespace gpu
 		{
 			points = NULL;
 			nodes = NULL;
-			result = NULL;
 			size = 0;
 			root = -1;
 		}
 
-		__device__ void radiusSearch(const Point *_target, const float _radius)
+		__device__ bool isEmptyRadius(const BallCenter *_target, const float _radius)
 		{
+			return isEmpty(0, _target, _radius, 0);
+		}
+
+	private:
+		__device__ bool isEmpty(const int _rootNodeIdx, const BallCenter *_center, const float _radius, const int _dimension)
+		{
+			if (_rootNodeIdx == -1)
+				return true;
+
+			int rootPointIdx = nodes[_rootNodeIdx].point;
+			if (rootPointIdx == -1)
+				return true;
+
+			if (_center->sqrDist(points[rootPointIdx]) < _radius * _radius)
+				return false;
+			else
+			{
+				// Check if both sides have to be explored
+				bool goLeft = false;
+				bool checkBoth = false;
+				switch ((_dimension % 3))
+				{
+					case 0: // x
+						checkBoth = fabs(_center->cx - points[rootPointIdx].x) < _radius;
+						goLeft = _center->cx <= points[rootPointIdx].x;
+						break;
+					case 1: // y
+						checkBoth = fabs(_center->cy - points[rootPointIdx].y) < _radius;
+						goLeft = _center->cy <= points[rootPointIdx].y;
+						break;
+					case 2: // z
+						checkBoth = fabs(_center->cz - points[rootPointIdx].z) < _radius;
+						goLeft = _center->cz <= points[rootPointIdx].z;
+						break;
+				}
+
+				// Get nodes indices
+				int leftNodeIdx = nodes[_rootNodeIdx].left;
+				int rightNodeIdx = nodes[_rootNodeIdx].right;
+
+				if (checkBoth)
+					return isEmpty(leftNodeIdx, _center, _radius, _dimension + 1) && isEmpty(rightNodeIdx, _center, _radius, _dimension + 1);
+				else
+				{
+					if (goLeft)
+						return isEmpty(leftNodeIdx, _center, _radius, _dimension + 1);
+					else
+						return isEmpty(rightNodeIdx, _center, _radius, _dimension + 1);
+				}
+			}
 		}
 	};
 
@@ -230,29 +278,52 @@ namespace gpu
 			buildDeviceTree(root, _destination, startIndex);
 		}
 
-		DeviceKDTree buildDeviceTree(DeviceNode *_devNodesMem, const Point *_devPointsMem)
+		__device__ bool isEmptyRadius(const BallCenter *_center, const float _radius)
 		{
-			// Create a host piece of memory to build the tree
-			DeviceNode *hostMem = new DeviceNode[size];
-			int startIndex = 0;
-			buildDeviceTree(root, hostMem, startIndex);
-
-			// Copy the tree data to gpu
-			GpuUtils::setData<DeviceNode>(&_devNodesMem, hostMem, size);
-
-			// Free the host memory allocated for construction
-			delete hostMem;
-
-			DeviceKDTree tree = DeviceKDTree();
-			tree.points = _devPointsMem;
-			tree.nodes = _devNodesMem;
-			tree.root = 0;
-			tree.size = size;
-
-			return tree;
+			return isEmpty(root, _center, _radius, 0);
 		}
 
 	private:
+		__device__ bool isEmpty(const HostNode *_root, const BallCenter *_center, const float _radius, const int _dimension)
+		{
+			if (_root == NULL)
+				return true;
+
+			if (_center->dist(points[_root->point]) < _radius)
+				return false;
+			else
+			{
+				// Check if both sides have to be explored
+				bool goLeft = false;
+				bool checkBoth = false;
+				switch ((_dimension % 3))
+				{
+					case 0: // x
+						checkBoth = fabs(_center->cx - points[_root->point].x) < _radius;
+						goLeft = _center->cx <= points[root->point].x;
+						break;
+					case 1: // y
+						checkBoth = fabs(_center->cy - points[_root->point].y) < _radius;
+						goLeft = _center->cy <= points[root->point].y;
+						break;
+					case 2: // z
+						checkBoth = fabs(_center->cz - points[_root->point].z) < _radius;
+						goLeft = _center->cz <= points[root->point].z;
+						break;
+				}
+
+				if (checkBoth)
+					return isEmpty(_root->left, _center, _radius, _dimension + 1) && isEmpty(_root->right, _center, _radius, _dimension + 1);
+				else
+				{
+					if (goLeft)
+						return isEmpty(_root->left, _center, _radius, _dimension + 1);
+					else
+						return isEmpty(_root->right, _center, _radius, _dimension + 1);
+				}
+			}
+		}
+
 		void buildDeviceTree(const HostNode *_root, DeviceNode *_mem, int &_addingIndex)
 		{
 			if (_root != NULL)
