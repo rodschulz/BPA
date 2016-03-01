@@ -20,13 +20,14 @@
 
     <section class="main-content">
       <h1>
-<a id="bpa---the-ball-pivoting-algorithm-pcl" class="anchor" href="#bpa---the-ball-pivoting-algorithm-pcl" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><strong>BPA - The Ball Pivoting Algorithm PCL</strong>
+<a id="the-ball-pivoting-algorithm" class="anchor" href="#the-ball-pivoting-algorithm" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><strong>The Ball Pivoting Algorithm</strong>
 </h1>
 
-<p>This an implementation of the Ball Pivoting Algorithm for surface reconstruction (Fausto Bernardini et al. 1999) which uses PCL to handle the 3D cloud information.</p>
+<p>The Ball Pivoting Algorithm (BPA) is an algorithm for surface reconstruction from 3D points. The algorithm uses a simple logic to decide how to build the mesh, based on pivoting a ball all along the points, adding a new triangle to the mesh each time the ball touches 3 different points (Fausto Bernardini et al. 1999).</p>
 
-<p><strong>The last stable implementation can be found in the releases page (<a href="https://github.com/rodschulz/BPA/releases">https://github.com/rodschulz/BPA/releases</a>).</strong>
-<strong>The outputs of the algorithm are generated in format OFF, which can be opened using several 3D data visualization software (GeomView for example).</strong></p>
+<p>This project presents an implementation of BPA which uses PCL to handle the input 3D cloud information. The output reconstructed mesh is given in <a href="http://people.sc.fsu.edu/%7Ejburkardt/data/off/off.html">OFF format</a>, which can be manipulated using several 3D data visualization software (<a href="http://www.geomview.org/">GeomView</a> for example).</p>
+
+<p><strong>The last stable implementation can be found in the releases page (<a href="https://github.com/rodschulz/BPA/releases">https://github.com/rodschulz/BPA/releases</a>).</strong></p>
 
 <p>More information about the algorithm can be found in the following links.</p>
 
